@@ -4,17 +4,17 @@
     "type": "module",
     "private": true,
     "scripts": {
-        "start": "bun src/server.ts",
-        "dev": "bun --watch src/server.ts",
-        "db:push": "bunx prisma db push",
-        "db:studio": "bunx prisma studio",
-        "postinstall": "bunx prisma generate"
+        "start": "tsx src/server.ts",
+        "dev": "tsx watch src/server.ts",
+        "db:push": "npx prisma db push",
+        "db:studio": "npx prisma studio",
+        "postinstall": "npx prisma generate"
     },
     "devDependencies": {
-        "@types/bun": "latest",
         "@types/cors": "^2.8.19",
         "@types/express": "^5.0.6",
-        "@types/pg": "^8.20.0"
+        "@types/pg": "^8.20.0",
+        "tsx": "^4.7.1"
     },
     "peerDependencies": {
         "typescript": "^5"
@@ -30,6 +30,6 @@
         "zod": "^4.4.3"
     },
     "prisma": {
-        "seed": "bun run prisma/seed.ts"
+        "seed": "tsx prisma/seed.ts"
     }
 }
