@@ -25,6 +25,7 @@ model User {
   receivedMessages Message[]  @relation("ReceivedMessages")
   bossesCreated    Boss[]     @relation("BossCreator")
   bossAttempts     BossAttempt[]
+  votes            PostVote[]
 }
 
 // 🏛️ Університет
@@ -48,6 +49,19 @@ model Post {
   userId       String
   user         User       @relation(fields: [userId], references: [id])
   comments     Comment[]
+  votes        PostVote[]
+}
+
+// 🗳️ Голоси за пости (Reddit-style)
+model PostVote {
+  id        String   @id @default(uuid())
+  type      String   // "UPVOTE" | "DOWNVOTE"
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId])
 }
 
 // 💬 Коментарі в тредах

@@ -104,6 +104,7 @@ export const getPostById = async (req: Request, res: Response) => {
 
 const votePostSchema = z.object({
   type: z.enum(['UPVOTE', 'DOWNVOTE']),
+  userId: z.string().min(1, "userId обов'язковий"),
 });
 
 export const votePost = async (req: Request, res: Response) => {
@@ -114,13 +115,59 @@ export const votePost = async (req: Request, res: Response) => {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || "Помилка валідації" });
     }
 
-    const { type } = parsed.data;
+    const { type, userId } = parsed.data;
     
+    // Check if user already voted
+    const existingVote = await prisma.postVote.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId: id
+        }
+      }
+    });
+
+    let incrementUp = 0;
+    let incrementDown = 0;
+
+    if (existingVote) {
+      if (existingVote.type === type) {
+        // Remove vote
+        await prisma.postVote.delete({ where: { id: existingVote.id } });
+        if (type === 'UPVOTE') incrementUp = -1;
+        else incrementDown = -1;
+      } else {
+        // Change vote
+        await prisma.postVote.update({
+          where: { id: existingVote.id },
+          data: { type }
+        });
+        if (type === 'UPVOTE') {
+          incrementUp = 1;
+          incrementDown = -1;
+        } else {
+          incrementUp = -1;
+          incrementDown = 1;
+        }
+      }
+    } else {
+      // New vote
+      await prisma.postVote.create({
+        data: {
+          type,
+          userId,
+          postId: id
+        }
+      });
+      if (type === 'UPVOTE') incrementUp = 1;
+      else incrementDown = 1;
+    }
+
     const post = await prisma.post.update({
       where: { id },
       data: {
-        upvotes: type === 'UPVOTE' ? { increment: 1 } : undefined,
-        downvotes: type === 'DOWNVOTE' ? { increment: 1 } : undefined,
+        upvotes: { increment: incrementUp },
+        downvotes: { increment: incrementDown },
       },
       include: {
         user: true,

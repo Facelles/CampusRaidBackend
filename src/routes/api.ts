@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login } from '../controllers/auth';
+import { login, register, getUniversities } from '../controllers/auth';
 import { getPosts, createPost, getPostById, votePost } from '../controllers/forum';
 import { getActiveBoss, attackBoss, joinBoss } from '../controllers/game';
 import { getTopUsers, getTopUniversities } from '../controllers/leaderboard';
@@ -10,9 +10,11 @@ import { getDashboardStats, createCustomBoss } from '../controllers/teacher';
 const router = Router();
 
 // ==========================================
-// 🔑 Блок 1: Авторизація
+// 🔑 Блок 1: Авторизація та Дані
 // ==========================================
 router.post('/auth/login', login);
+router.post('/auth/register', register);
+router.get('/universities', getUniversities);
 
 // ==========================================
 // 📰 Блок 2: Форум (Reddit-style)
