@@ -4,6 +4,7 @@
     "type": "module",
     "private": true,
     "scripts": {
+        "start": "bun src/server.ts",
         "dev": "bun --watch src/server.ts",
         "db:push": "bunx prisma db push",
         "db:studio": "bunx prisma studio"
