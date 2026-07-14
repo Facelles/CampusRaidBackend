@@ -1,0 +1,124 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 🎓 Користувач (Студент або Викладач)
+model User {
+  id               String     @id @default(uuid())
+  email            String     @unique
+  name             String
+  role             String     @default("STUDENT") // "STUDENT" | "TEACHER" | "ADMIN"
+  xp               Int        @default(0)
+  coins            Int        @default(0)
+  titles           String[]   @default([]) // Куплені титули в магазині
+  universityId     String
+  university       University @relation(fields: [universityId], references: [id])
+  posts            Post[]
+  comments         Comment[]
+  
+  // Відношення для нових фіч
+  sentMessages     Message[]  @relation("SentMessages")
+  receivedMessages Message[]  @relation("ReceivedMessages")
+  bossesCreated    Boss[]     @relation("BossCreator")
+  bossAttempts     BossAttempt[]
+}
+
+// 🏛️ Університет
+model University {
+  id    String @id @default(uuid())
+  name  String @unique
+  users User[]
+  posts Post[]
+}
+
+// 📰 Пости / Треди
+model Post {
+  id           String     @id @default(uuid())
+  title        String
+  content      String
+  createdAt    DateTime   @default(now())
+  universityId String
+  university   University @relation(fields: [universityId], references: [id])
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  comments     Comment[]
+}
+
+// 💬 Коментарі в тредах
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+// 👾 Бос
+model Boss {
+  id        String   @id @default(uuid())
+  name      String
+  maxHp     Int
+  currentHp Int
+  status    String   @default("ACTIVE") // "ACTIVE" | "PROPOSED"
+  inviteCode String?  @unique // Код доступу для приватних босів викладача
+  creatorId String?
+  creator   User?    @relation("BossCreator", fields: [creatorId], references: [id])
+  puzzles   Puzzle[]
+  attempts  BossAttempt[]
+}
+
+// 🧩 Задача-пазл для боса
+model Puzzle {
+  id           String      @id @default(uuid())
+  title        String
+  description  String
+  bossId       String
+  boss         Boss        @relation(fields: [bossId], references: [id])
+  blocks       CodeBlock[]
+  correctOrder String
+}
+
+// 🔠 Блоки коду
+model CodeBlock {
+  id       String @id @default(uuid())
+  text     String
+  puzzleId String
+  puzzle   Puzzle @relation(fields: [puzzleId], references: [id])
+}
+
+// 📨 Приватні повідомлення (Чат)
+model Message {
+  id         String   @id @default(uuid())
+  content    String
+  createdAt  DateTime @default(now())
+  senderId   String
+  receiverId String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+// 🛒 Магазин: Товари та Титули
+model ShopItem {
+  id          String @id @default(uuid())
+  name        String
+  description String
+  price       Int
+  type        String // "TITLE" | "HINT"
+}
+
+// 📊 Аналітика: Спроби атак на босів
+model BossAttempt {
+  id        String   @id @default(uuid())
+  success   Boolean
+  createdAt DateTime @default(now())
+  userId    String
+  bossId    String
+  user      User     @relation(fields: [userId], references: [id])
+  boss      Boss     @relation(fields: [bossId], references: [id])
+}
