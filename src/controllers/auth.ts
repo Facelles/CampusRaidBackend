@@ -1,9 +1,11 @@
 import { type Request, type Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
 
 const loginSchema = z.object({
   email: z.string().email('Некоректний формат email'),
+  password: z.string().min(1, "Пароль обов'язковий"),
 });
 
 export const login = async (req: Request, res: Response) => {
@@ -13,7 +15,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || "Помилка валідації" });
     }
 
-    const { email } = parsed.data;
+    const { email, password } = parsed.data;
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -23,7 +25,13 @@ export const login = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Акаунт не знайдено. Будь ласка, зареєструйтеся.' });
     }
 
-    res.json(user);
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Невірний пароль.' });
+    }
+
+    const { password: _, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка сервера під час логіну' });
@@ -32,8 +40,9 @@ export const login = async (req: Request, res: Response) => {
 
 const registerSchema = z.object({
   email: z.string().email('Некоректний формат email'),
+  password: z.string().min(6, 'Пароль має містити хоча б 6 символів'),
   name: z.string().min(2, "Ім'я має містити хоча б 2 символи"),
-  universityId: z.string().min(1, "Університет обов'язковий")
+  universityName: z.string().min(1, "Назва університету обов'язкова")
 });
 
 export const register = async (req: Request, res: Response) => {
@@ -43,7 +52,7 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || "Помилка валідації" });
     }
 
-    const { email, name, universityId } = parsed.data;
+    const { email, password, name, universityName } = parsed.data;
 
     let user = await prisma.user.findUnique({
       where: { email },
@@ -53,15 +62,29 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Цей email вже зареєстрований.' });
     }
 
+    let university = await prisma.university.findUnique({
+      where: { name: universityName }
+    });
+
+    if (!university) {
+      university = await prisma.university.create({
+        data: { name: universityName }
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     user = await prisma.user.create({
       data: {
         email,
+        password: hashedPassword,
         name,
-        universityId,
+        universityId: university.id,
       },
     });
 
-    res.json(user);
+    const { password: _, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка сервера під час реєстрації' });

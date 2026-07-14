@@ -18,7 +18,9 @@ export const getPosts = async (req: Request, res: Response) => {
     const posts = await prisma.post.findMany({
       where: universityId ? { universityId: String(universityId) } : undefined,
       include: {
-        user: true,
+        user: {
+          select: { id: true, name: true, role: true, xp: true, coins: true, titles: true, universityId: true }
+        },
         _count: {
           select: { comments: true }
         }
@@ -81,10 +83,14 @@ export const getPostById = async (req: Request, res: Response) => {
     const post = await prisma.post.findUnique({
       where: { id },
       include: {
-        user: true,
+        user: {
+          select: { id: true, name: true, role: true, xp: true, coins: true, titles: true, universityId: true }
+        },
         comments: {
           include: {
-            user: true
+            user: {
+              select: { id: true, name: true, role: true, xp: true, coins: true, titles: true, universityId: true }
+            }
           },
           orderBy: { createdAt: 'asc' }
         }
@@ -173,7 +179,9 @@ export const votePost = async (req: Request, res: Response) => {
         downvotes: { increment: incrementDown },
       },
       include: {
-        user: true,
+        user: {
+          select: { id: true, name: true, role: true, xp: true, coins: true, titles: true, universityId: true }
+        },
         _count: {
           select: { comments: true }
         }
