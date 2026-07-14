@@ -17,6 +17,7 @@ async function main() {
   const bossesData = [
     {
       name: 'Зелений Жнець (Memory Leak)',
+      imageUrl: '/assets/null_reaper_isolated_1784022346516.jpg',
       maxHp: 800,
       puzzles: [
         {
@@ -65,6 +66,7 @@ async function main() {
     },
     {
       name: 'Уроборос (Infinite Loop)',
+      imageUrl: '/assets/loop_dragon_isolated_1784022338222.jpg',
       maxHp: 1200,
       puzzles: [
         {
@@ -114,6 +116,7 @@ async function main() {
     },
     {
       name: 'Червоний Демон (Kernel Panic)',
+      imageUrl: '/assets/syntax_boss_isolated_1784022329125.jpg',
       maxHp: 2000,
       puzzles: [
         {
@@ -169,6 +172,7 @@ async function main() {
       boss = await prisma.boss.create({
         data: {
           name: b.name,
+          imageUrl: b.imageUrl,
           maxHp: b.maxHp,
           currentHp: b.maxHp,
           inviteCode: `HACK-${b.name.substring(0, 3).toUpperCase()}` // Генеруємо умовний inviteCode
@@ -191,7 +195,11 @@ async function main() {
       }
       console.log(`Пазли додані для: ${boss.name}`);
     } else {
-      console.log(`Бос вже існує: ${boss.name}`);
+      await prisma.boss.update({
+        where: { id: boss.id },
+        data: { imageUrl: b.imageUrl }
+      });
+      console.log(`Бос вже існує, оновлено imageUrl: ${boss.name}`);
     }
   }
 

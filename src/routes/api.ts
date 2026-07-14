@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { login } from '../controllers/auth';
-import { getPosts, createPost, getPostById } from '../controllers/forum';
+import { getPosts, createPost, getPostById, votePost } from '../controllers/forum';
 import { getActiveBoss, attackBoss, joinBoss } from '../controllers/game';
 import { getTopUsers, getTopUniversities } from '../controllers/leaderboard';
 import { sendMessage, getChatHistory, getMyChats } from '../controllers/chat';
@@ -20,6 +20,7 @@ router.post('/auth/login', login);
 router.get('/posts', getPosts);
 router.post('/posts', createPost);
 router.get('/posts/:id', getPostById);
+router.post('/posts/:id/vote', votePost);
 
 // ==========================================
 // 👾 Блок 3: Ігрова логіка (Рейд на Боса)

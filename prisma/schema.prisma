@@ -40,6 +40,8 @@ model Post {
   id           String     @id @default(uuid())
   title        String
   content      String
+  upvotes      Int        @default(0)
+  downvotes    Int        @default(0)
   createdAt    DateTime   @default(now())
   universityId String
   university   University @relation(fields: [universityId], references: [id])
@@ -63,6 +65,7 @@ model Comment {
 model Boss {
   id        String   @id @default(uuid())
   name      String
+  imageUrl  String?  // URL картинки боса
   maxHp     Int
   currentHp Int
   status    String   @default("ACTIVE") // "ACTIVE" | "PROPOSED"

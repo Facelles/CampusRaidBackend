@@ -101,3 +101,38 @@ export const getPostById = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Помилка сервера' });
   }
 };
+
+const votePostSchema = z.object({
+  type: z.enum(['UPVOTE', 'DOWNVOTE']),
+});
+
+export const votePost = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const parsed = votePostSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Помилка валідації" });
+    }
+
+    const { type } = parsed.data;
+    
+    const post = await prisma.post.update({
+      where: { id },
+      data: {
+        upvotes: type === 'UPVOTE' ? { increment: 1 } : undefined,
+        downvotes: type === 'DOWNVOTE' ? { increment: 1 } : undefined,
+      },
+      include: {
+        user: true,
+        _count: {
+          select: { comments: true }
+        }
+      }
+    });
+
+    res.json(post);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка сервера' });
+  }
+};
