@@ -163,6 +163,57 @@ async function main() {
           ]
         }
       ]
+    },
+    {
+      name: 'Магістр Теорії (Weekly Quiz)',
+      imageUrl: null, // Можна додати картинку пізніше
+      maxHp: 1500,
+      puzzles: [
+        {
+          title: 'Питання 1: JS Output',
+          description: 'Що виведе цей код: console.log(typeof NaN)? Обери один правильний блок.',
+          correctOrder: 'quiz-1-1',
+          blocks: [
+            { id: 'quiz-1-1', text: '"number"' },
+            { id: 'quiz-1-2', text: '"NaN"' },
+            { id: 'quiz-1-3', text: '"undefined"' },
+            { id: 'quiz-1-4', text: '"object"' }
+          ]
+        },
+        {
+          title: 'Питання 2: Основи Git',
+          description: 'Яка команда використовується для фіксації (збереження) змін у локальному репозиторії?',
+          correctOrder: 'quiz-2-1',
+          blocks: [
+            { id: 'quiz-2-1', text: 'git commit' },
+            { id: 'quiz-2-2', text: 'git push' },
+            { id: 'quiz-2-3', text: 'git add' },
+            { id: 'quiz-2-4', text: 'git clone' }
+          ]
+        },
+        {
+          title: 'Питання 3: JS Event Loop',
+          description: 'Що виведеться першим: setTimeout(..., 0) чи Promise.resolve().then(...)?',
+          correctOrder: 'quiz-3-1',
+          blocks: [
+            { id: 'quiz-3-1', text: 'Promise.resolve() (Microtask)' },
+            { id: 'quiz-3-2', text: 'setTimeout (Macrotask)' },
+            { id: 'quiz-3-3', text: 'Одночасно' },
+            { id: 'quiz-3-4', text: 'Виникне помилка' }
+          ]
+        },
+        {
+          title: 'Питання 4: Порівняння в JS',
+          description: 'Що поверне вираз: [] == ![] ?',
+          correctOrder: 'quiz-4-1',
+          blocks: [
+            { id: 'quiz-4-1', text: 'true' },
+            { id: 'quiz-4-2', text: 'false' },
+            { id: 'quiz-4-3', text: 'undefined' },
+            { id: 'quiz-4-4', text: 'TypeError' }
+          ]
+        }
+      ]
     }
   ];
 

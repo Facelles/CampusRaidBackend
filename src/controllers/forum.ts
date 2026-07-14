@@ -109,7 +109,10 @@ const votePostSchema = z.object({
 
 export const votePost = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
+    if (!id) {
+      return res.status(400).json({ error: "ID поста обов'язковий" });
+    }
     const parsed = votePostSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || "Помилка валідації" });
