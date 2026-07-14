@@ -96,6 +96,7 @@ model Puzzle {
   id           String      @id @default(uuid())
   title        String
   description  String
+  type         String      @default("SORTING") // "SORTING" | "MULTIPLE_CHOICE"
   bossId       String
   boss         Boss        @relation(fields: [bossId], references: [id])
   blocks       CodeBlock[]

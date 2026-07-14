@@ -18,48 +18,42 @@ async function main() {
     {
       name: 'Зелений Жнець (Memory Leak)',
       imageUrl: '/assets/null_reaper_isolated_1784022346516.jpg',
-      maxHp: 800,
+      maxHp: 2000,
       puzzles: [
         {
-          title: 'Рейд 1: Очищення Пам\'яті',
-          description: 'Жнець висмоктує оперативну пам\'ять! Віднови правильний порядок функції очищення, щоб зупинити витік.',
+          title: 'Рейд 1: WeakMap Кешування',
+          description: 'Звичайний Map тримає посилання на DOM вузли вічно, викликаючи Memory Leak. Використай WeakMap для прив\'язки даних до об\'єкта, щоб Garbage Collector міг їх звільнити.',
+          type: 'SORTING',
           correctOrder: 'reaper-1-1,reaper-1-2,reaper-1-3,reaper-1-4',
           blocks: [
-            { id: 'reaper-1-1', text: 'function clearCache(data) {' },
-            { id: 'reaper-1-2', text: '  if (data && data.length > 0) {' },
-            { id: 'reaper-1-3', text: '    data.length = 0; // Очищуємо масив' },
-            { id: 'reaper-1-4', text: '  }\n}' }
+            { id: 'reaper-1-1', text: 'const cache = new WeakMap();' },
+            { id: 'reaper-1-2', text: 'function processNode(node) {' },
+            { id: 'reaper-1-3', text: '  cache.set(node, { computed: true });' },
+            { id: 'reaper-1-4', text: '}' }
           ]
         },
         {
-          title: 'Рейд 2: Відписка від подій',
-          description: 'Сотні зомбі-лісенерів уповільнюють браузер. Видали слухача подій правильно!',
-          correctOrder: 'reaper-2-1,reaper-2-2,reaper-2-3',
+          title: 'Рейд 2: Замикання та Пам\'ять',
+          description: 'Що виведе цей код після виконання функції?\n\nfunction createClosure() {\n  let bigArray = new Array(1000).fill("data");\n  return function() {\n    console.log(bigArray[0]);\n  };\n}\nconst leak = createClosure();',
+          type: 'MULTIPLE_CHOICE',
+          correctOrder: 'reaper-2-B',
           blocks: [
-            { id: 'reaper-2-1', text: 'function cleanup() {' },
-            { id: 'reaper-2-2', text: '  window.removeEventListener("scroll", handleScroll);' },
-            { id: 'reaper-2-3', text: '}' }
+            { id: 'reaper-2-A', text: 'A. GC одразу видалить bigArray після виклику createClosure()' },
+            { id: 'reaper-2-B', text: 'B. bigArray залишатиметься в пам\'яті, поки існує leak' },
+            { id: 'reaper-2-C', text: 'C. ReferenceError, бо масив недоступний ззовні' },
+            { id: 'reaper-2-D', text: 'D. Помилка OutOfMemory' }
           ]
         },
         {
-          title: 'Рейд 3: Зупинка Таймера',
-          description: 'Таймер працює вічно і жере процесор. Використай clearInterval.',
+          title: 'Рейд 3: React AbortController',
+          description: 'Компонент демонтується до завершення fetch запиту, спричиняючи витік стану. Скасуй запит правильно!',
+          type: 'SORTING',
           correctOrder: 'reaper-3-1,reaper-3-2,reaper-3-3,reaper-3-4',
           blocks: [
-            { id: 'reaper-3-1', text: 'const timer = setInterval(() => {' },
-            { id: 'reaper-3-2', text: '  console.log("Tick");' },
-            { id: 'reaper-3-3', text: '}, 1000);' },
-            { id: 'reaper-3-4', text: 'clearInterval(timer);' }
-          ]
-        },
-        {
-          title: 'Рейд 4: Закриття з\'єднання',
-          description: 'База даних перевантажена відкритими сокетами! Закрий з\'єднання.',
-          correctOrder: 'reaper-4-1,reaper-4-2,reaper-4-3',
-          blocks: [
-            { id: 'reaper-4-1', text: 'async function endSession(db) {' },
-            { id: 'reaper-4-2', text: '  await db.disconnect();' },
-            { id: 'reaper-4-3', text: '}' }
+            { id: 'reaper-3-1', text: 'useEffect(() => {' },
+            { id: 'reaper-3-2', text: '  const controller = new AbortController();\n  fetchData(controller.signal);' },
+            { id: 'reaper-3-3', text: '  return () => controller.abort();' },
+            { id: 'reaper-3-4', text: '}, []);' }
           ]
         }
       ]
@@ -67,49 +61,43 @@ async function main() {
     {
       name: 'Уроборос (Infinite Loop)',
       imageUrl: '/assets/loop_dragon_isolated_1784022338222.jpg',
-      maxHp: 1200,
+      maxHp: 3500,
       puzzles: [
         {
-          title: 'Рейд 1: Розірвати Цикл',
-          description: 'Дракон зациклився у нескінченності! Виправ умову виходу з циклу while.',
-          correctOrder: 'dragon-1-1,dragon-1-2,dragon-1-3,dragon-1-4',
+          title: 'Рейд 1: Рекурсивний DFS Графа',
+          description: 'Дракон зациклився у циклічному графі! Виправ функцію пошуку, щоб вона уникала нескінченного циклу за допомогою Set.',
+          type: 'SORTING',
+          correctOrder: 'dragon-1-1,dragon-1-2,dragon-1-3,dragon-1-4,dragon-1-5',
           blocks: [
-            { id: 'dragon-1-1', text: 'let i = 0;' },
-            { id: 'dragon-1-2', text: 'while (i < 10) {' },
-            { id: 'dragon-1-3', text: '  console.log("Удар!");' },
-            { id: 'dragon-1-4', text: '  i++;\n}' }
+            { id: 'dragon-1-1', text: 'function dfs(node, visited = new Set()) {' },
+            { id: 'dragon-1-2', text: '  if (visited.has(node.id)) return;' },
+            { id: 'dragon-1-3', text: '  visited.add(node.id);' },
+            { id: 'dragon-1-4', text: '  for (const neighbor of node.edges) { dfs(neighbor, visited); }' },
+            { id: 'dragon-1-5', text: '}' }
           ]
         },
         {
-          title: 'Рейд 2: Базовий випадок рекурсії',
-          description: 'Рекурсія без виходу викликає Stack Overflow. Додай умову зупинки.',
-          correctOrder: 'dragon-2-1,dragon-2-2,dragon-2-3,dragon-2-4',
+          title: 'Рейд 2: Event Loop Загадка',
+          description: 'В якому порядку виконаються ці консоль-логи?\n\nconsole.log(1);\nsetTimeout(() => console.log(2), 0);\nPromise.resolve().then(() => console.log(3));\nconsole.log(4);',
+          type: 'MULTIPLE_CHOICE',
+          correctOrder: 'dragon-2-C',
           blocks: [
-            { id: 'dragon-2-1', text: 'function factorial(n) {' },
-            { id: 'dragon-2-2', text: '  if (n <= 1) return 1;' },
-            { id: 'dragon-2-3', text: '  return n * factorial(n - 1);' },
-            { id: 'dragon-2-4', text: '}' }
+            { id: 'dragon-2-A', text: 'A. 1, 2, 3, 4' },
+            { id: 'dragon-2-B', text: 'B. 1, 4, 2, 3' },
+            { id: 'dragon-2-C', text: 'C. 1, 4, 3, 2' },
+            { id: 'dragon-2-D', text: 'D. 1, 3, 4, 2' }
           ]
         },
         {
-          title: 'Рейд 3: Крок циклу For',
-          description: 'Цикл ніколи не завершиться, якщо не збільшувати лічильник.',
-          correctOrder: 'dragon-3-1,dragon-3-2,dragon-3-3',
+          title: 'Рейд 3: Exponential Backoff',
+          description: 'Сервер дракона падає від спаму запитами. Реалізуй безпечний retry з експоненційним затримуванням.',
+          type: 'SORTING',
+          correctOrder: 'dragon-3-1,dragon-3-2,dragon-3-3,dragon-3-4',
           blocks: [
-            { id: 'dragon-3-1', text: 'for (let k = 0; k < arr.length; k++) {' },
-            { id: 'dragon-3-2', text: '  process(arr[k]);' },
-            { id: 'dragon-3-3', text: '}' }
-          ]
-        },
-        {
-          title: 'Рейд 4: Запобігання дедлоку',
-          description: 'Використай break, щоб екстрено вийти з нескінченного циклу.',
-          correctOrder: 'dragon-4-1,dragon-4-2,dragon-4-3,dragon-4-4',
-          blocks: [
-            { id: 'dragon-4-1', text: 'while (true) {' },
-            { id: 'dragon-4-2', text: '  if (isTargetFound()) {' },
-            { id: 'dragon-4-3', text: '    break;' },
-            { id: 'dragon-4-4', text: '  }\n}' }
+            { id: 'dragon-3-1', text: 'async function fetchWithRetry(url, attempt = 1) {' },
+            { id: 'dragon-3-2', text: '  try { return await fetch(url); } catch (e) {' },
+            { id: 'dragon-3-3', text: '    await new Promise(res => setTimeout(res, 2 ** attempt * 100));' },
+            { id: 'dragon-3-4', text: '    return fetchWithRetry(url, attempt + 1); } }' }
           ]
         }
       ]
@@ -117,125 +105,75 @@ async function main() {
     {
       name: 'Червоний Демон (Kernel Panic)',
       imageUrl: '/assets/syntax_boss_isolated_1784022329125.jpg',
-      maxHp: 2000,
+      maxHp: 5000,
       puzzles: [
         {
-          title: 'Рейд 1: Обробка Помилок',
-          description: 'Демон спамить фатальними помилками! Напиши безпечний try-catch блок.',
-          correctOrder: 'demon-1-1,demon-1-2,demon-1-3,demon-1-4,demon-1-5',
+          title: 'Рейд 1: Безпека JWT',
+          description: 'Демон вкрав токени користувачів! Валідуй токен правильно, щоб запобігти падінню сервера від ExpiredTokenError.',
+          type: 'SORTING',
+          correctOrder: 'demon-1-1,demon-1-2,demon-1-3,demon-1-4',
           blocks: [
-            { id: 'demon-1-1', text: 'try {' },
-            { id: 'demon-1-2', text: '  executeDangerousCode();' },
-            { id: 'demon-1-3', text: '} catch (error) {' },
-            { id: 'demon-1-4', text: '  console.error(error);' },
-            { id: 'demon-1-5', text: '}' }
+            { id: 'demon-1-1', text: 'try { const payload = jwt.verify(token, SECRET); }' },
+            { id: 'demon-1-2', text: 'catch (err) { if (err.name === "TokenExpiredError") {' },
+            { id: 'demon-1-3', text: '  return res.status(401).json({ error: "Token expired" });' },
+            { id: 'demon-1-4', text: '} return res.status(403).json({ error: "Invalid token" }); }' }
           ]
         },
         {
-          title: 'Рейд 2: Null Check',
-          description: 'Читання властивостей null ламає додаток. Додай перевірку.',
-          correctOrder: 'demon-2-1,demon-2-2,demon-2-3,demon-2-4',
+          title: 'Рейд 2: Обробка Promise.all',
+          description: 'Якщо один Promise в `Promise.all` падає - падає все. Як отримати результати ВСІХ запитів, навіть якщо деякі впали?',
+          type: 'MULTIPLE_CHOICE',
+          correctOrder: 'demon-2-D',
           blocks: [
-            { id: 'demon-2-1', text: 'function getUserName(user) {' },
-            { id: 'demon-2-2', text: '  if (!user) return "Guest";' },
-            { id: 'demon-2-3', text: '  return user.name;' },
-            { id: 'demon-2-4', text: '}' }
+            { id: 'demon-2-A', text: 'A. Використати Promise.race()' },
+            { id: 'demon-2-B', text: 'B. Огорнути Promise.all в try...catch' },
+            { id: 'demon-2-C', text: 'C. Використати await Promise.any()' },
+            { id: 'demon-2-D', text: 'D. Використати Promise.allSettled()' }
           ]
         },
         {
-          title: 'Рейд 3: Promise Catch',
-          description: 'Необроблений Promise Rejection знищить бекенд. Додай .catch()',
+          title: 'Рейд 3: SQL Injection',
+          description: 'Демон намагається зламати базу даних (DROP TABLE users). Напиши безпечний Prepared Statement для Prisma.',
+          type: 'SORTING',
           correctOrder: 'demon-3-1,demon-3-2,demon-3-3',
           blocks: [
-            { id: 'demon-3-1', text: 'fetchData()' },
-            { id: 'demon-3-2', text: '  .then(res => res.json())' },
-            { id: 'demon-3-3', text: '  .catch(err => console.log(err));' }
-          ]
-        },
-        {
-          title: 'Рейд 4: Throw Error',
-          description: 'Краще кинути зрозумілу помилку, ніж отримати дивну поведінку.',
-          correctOrder: 'demon-4-1,demon-4-2,demon-4-3',
-          blocks: [
-            { id: 'demon-4-1', text: 'if (age < 0) {' },
-            { id: 'demon-4-2', text: '  throw new Error("Invalid age");' },
-            { id: 'demon-4-3', text: '}' }
-          ]
-        }
-      ]
-    },
-    {
-      name: 'Магістр Теорії (Weekly Quiz)',
-      imageUrl: null, // Можна додати картинку пізніше
-      maxHp: 1500,
-      puzzles: [
-        {
-          title: 'Питання 1: JS Output',
-          description: 'Що виведе цей код: console.log(typeof NaN)? Обери один правильний блок.',
-          correctOrder: 'quiz-1-1',
-          blocks: [
-            { id: 'quiz-1-1', text: '"number"' },
-            { id: 'quiz-1-2', text: '"NaN"' },
-            { id: 'quiz-1-3', text: '"undefined"' },
-            { id: 'quiz-1-4', text: '"object"' }
-          ]
-        },
-        {
-          title: 'Питання 2: Основи Git',
-          description: 'Яка команда використовується для фіксації (збереження) змін у локальному репозиторії?',
-          correctOrder: 'quiz-2-1',
-          blocks: [
-            { id: 'quiz-2-1', text: 'git commit' },
-            { id: 'quiz-2-2', text: 'git push' },
-            { id: 'quiz-2-3', text: 'git add' },
-            { id: 'quiz-2-4', text: 'git clone' }
-          ]
-        },
-        {
-          title: 'Питання 3: JS Event Loop',
-          description: 'Що виведеться першим: setTimeout(..., 0) чи Promise.resolve().then(...)?',
-          correctOrder: 'quiz-3-1',
-          blocks: [
-            { id: 'quiz-3-1', text: 'Promise.resolve() (Microtask)' },
-            { id: 'quiz-3-2', text: 'setTimeout (Macrotask)' },
-            { id: 'quiz-3-3', text: 'Одночасно' },
-            { id: 'quiz-3-4', text: 'Виникне помилка' }
-          ]
-        },
-        {
-          title: 'Питання 4: Порівняння в JS',
-          description: 'Що поверне вираз: [] == ![] ?',
-          correctOrder: 'quiz-4-1',
-          blocks: [
-            { id: 'quiz-4-1', text: 'true' },
-            { id: 'quiz-4-2', text: 'false' },
-            { id: 'quiz-4-3', text: 'undefined' },
-            { id: 'quiz-4-4', text: 'TypeError' }
+            { id: 'demon-3-1', text: 'const userEmail = req.body.email;' },
+            { id: 'demon-3-2', text: 'const users = await prisma.$queryRaw`' },
+            { id: 'demon-3-3', text: '  SELECT * FROM User WHERE email = ${userEmail}`' }
           ]
         }
       ]
     }
   ];
 
+  // 3. Очищення старих босів та пазлів
+  await prisma.bossAttempt.deleteMany();
+  await prisma.codeBlock.deleteMany();
+  await prisma.puzzle.deleteMany();
+  await prisma.boss.deleteMany();
+
   for (const b of bossesData) {
-    let boss = await prisma.boss.findFirst({ where: { name: b.name } });
+    let boss = await prisma.boss.findFirst({
+      where: { name: b.name }
+    });
+
     if (!boss) {
       boss = await prisma.boss.create({
         data: {
           name: b.name,
           imageUrl: b.imageUrl,
           maxHp: b.maxHp,
-          currentHp: b.maxHp,
-          inviteCode: `HACK-${b.name.substring(0, 3).toUpperCase()}` // Генеруємо умовний inviteCode
+          currentHp: b.maxHp
         }
       });
-      console.log(`Бос створений: ${boss.name}`);
+      console.log(`Створено боса: ${boss.name}`);
 
       for (const puzzleData of b.puzzles) {
         await prisma.puzzle.create({
           data: {
             title: puzzleData.title,
             description: puzzleData.description,
+            type: puzzleData.type,
             bossId: boss.id,
             correctOrder: puzzleData.correctOrder,
             blocks: {
@@ -245,12 +183,6 @@ async function main() {
         });
       }
       console.log(`Пазли додані для: ${boss.name}`);
-    } else {
-      await prisma.boss.update({
-        where: { id: boss.id },
-        data: { imageUrl: b.imageUrl }
-      });
-      console.log(`Бос вже існує, оновлено imageUrl: ${boss.name}`);
     }
   }
 
