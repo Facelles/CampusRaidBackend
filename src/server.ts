@@ -13,6 +13,10 @@ app.use(express.json());
 
 app.use("/api", apiRoutes);
 
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Bun-сервер полетів на порту ${PORT}`);
 });
