@@ -132,14 +132,14 @@ export const attackBoss = async (req: Request, res: Response) => {
       });
 
       await prisma.bossAttempt.create({
-        data: { userId, bossId: puzzle.bossId, success: true }
+        data: { userId, bossId: puzzle.bossId, success: true, damage }
       });
 
       return res.json({ success: true, damage, message: 'Критичний удар по Босу!' });
     } else {
       // Логування невдалої спроби
       await prisma.bossAttempt.create({
-        data: { userId, bossId: puzzle.bossId, success: false }
+        data: { userId, bossId: puzzle.bossId, success: false, damage: 0 }
       });
 
       return res.json({ success: false, message: 'Код не скомпілювався. Бос контратакує!' });

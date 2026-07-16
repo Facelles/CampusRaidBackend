@@ -140,6 +140,7 @@ model ShopItem {
 model BossAttempt {
   id        String   @id @default(uuid())
   success   Boolean
+  damage    Int      @default(0)
   createdAt DateTime @default(now())
   userId    String
   bossId    String

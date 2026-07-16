@@ -69,15 +69,29 @@ export const getTopUniversities = async (req: Request, res: Response) => {
 export const getBossLeaderboard = async (req: Request, res: Response) => {
   try {
     const bossId = req.params.bossId as string;
-    const attempts = await prisma.bossAttempt.findMany({
-      where: { bossId, success: true },
-      include: {
-        user: { select: { id: true, name: true, university: { select: { name: true } } } }
-      },
-      orderBy: { createdAt: 'asc' },
+    const leaderboard = await prisma.bossAttempt.groupBy({
+      by: ['userId'],
+      where: { bossId },
+      _sum: { damage: true },
+      orderBy: { _sum: { damage: 'desc' } },
       take: 10
     });
-    res.json(attempts);
+
+    const userIds = leaderboard.map(lb => lb.userId);
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, titles: true }
+    });
+
+    const result = leaderboard.map(lb => {
+      const user = users.find(u => u.id === lb.userId);
+      return {
+        ...lb,
+        user
+      };
+    });
+
+    res.json(result);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка отримання рейтингу боса' });
