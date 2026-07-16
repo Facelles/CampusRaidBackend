@@ -17,6 +17,21 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     const { senderId, receiverId, content } = parsed.data;
 
+    // Перевірка чи вони друзі
+    const friendship = await prisma.friendship.findFirst({
+      where: {
+        status: 'ACCEPTED',
+        OR: [
+          { user1Id: senderId, user2Id: receiverId },
+          { user1Id: receiverId, user2Id: senderId }
+        ]
+      }
+    });
+
+    if (!friendship) {
+      return res.status(403).json({ error: 'Ви можете писати лише своїм друзям' });
+    }
+
     const message = await prisma.message.create({
       data: {
         senderId,

@@ -102,3 +102,37 @@ export const getUniversities = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Помилка сервера' });
   }
 };
+
+const updateUniversitySchema = z.object({
+  userId: z.string().min(1, 'userId обов\'язковий'),
+  universityId: z.string().min(1, 'universityId обов\'язковий'),
+});
+
+export const updateUniversity = async (req: Request, res: Response) => {
+  try {
+    const parsed = updateUniversitySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Помилка валідації" });
+    }
+
+    const { userId, universityId } = parsed.data;
+
+    // Перевіримо, чи існує універ
+    const university = await prisma.university.findUnique({ where: { id: universityId } });
+    if (!university) {
+      return res.status(404).json({ error: 'Університет не знайдено' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { universityId },
+      include: { university: true }
+    });
+
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    res.json(userWithoutPassword);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка сервера при оновленні університету' });
+  }
+};

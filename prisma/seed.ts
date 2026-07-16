@@ -1,4 +1,5 @@
 import { prisma } from '../src/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 async function main() {
   console.log('🌱 Починаємо наповнення бази даних (Seed)...');
@@ -197,6 +198,57 @@ async function main() {
       ]
     });
     console.log(`Товари для магазину додані!`);
+  }
+
+  // 5. Адмін та Форум (Тема хакатону)
+  const adminEmail = 'facellesit@gmail.com';
+  let admin = await prisma.user.findUnique({ where: { email: adminEmail } });
+  if (!admin) {
+    const adminPassword = process.env.ADMIN_PASSWORD || 'SuperSecretAdmin123!';
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    admin = await prisma.user.create({
+      data: {
+        name: 'Студрада (Admin)',
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'ADMIN',
+        xp: 9999,
+        coins: 9999,
+        universityId: uni.id
+      }
+    });
+    console.log(`Адмін створений: ${adminEmail}`);
+
+    const hackathonPosts = [
+      {
+        title: '💼 Допомога в пошуках роботи',
+        content: 'Діліться своїми резюме, вакансіями та порадами щодо працевлаштування для студентів! Сюди можна скидати лінки на стажування.'
+      },
+      {
+        title: '📚 Допомога в навчанні',
+        content: 'Не можете розібратися з матаналізом чи алгоритмами? Запитуйте тут, старшокурсники та викладачі допоможуть розібрати складні теми.'
+      },
+      {
+        title: '💡 Студентські ініціативи',
+        content: 'Маєте ідею, як покращити життя в гуртожитку чи на кампусі? Пропонуйте свої проекти тут. Найкращі ідеї отримають підтримку Студради.'
+      },
+      {
+        title: '🤝 Психологічна підтримка',
+        content: 'Сесія близько? Вигорання? Заходьте сюди, щоб поділитися наболілим, знайти підтримку від інших студентів або звернутися до психолога університету.'
+      }
+    ];
+
+    for (const post of hackathonPosts) {
+      await prisma.post.create({
+        data: {
+          title: post.title,
+          content: post.content,
+          universityId: uni.id,
+          userId: admin.id
+        }
+      });
+    }
+    console.log('Теми хакатону додані на форум!');
   }
 
   console.log('✅ База успішно наповнена даними!');

@@ -65,3 +65,21 @@ export const getTopUniversities = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Помилка отримання рейтингу університетів' });
   }
 };
+
+export const getBossLeaderboard = async (req: Request, res: Response) => {
+  try {
+    const bossId = req.params.bossId as string;
+    const attempts = await prisma.bossAttempt.findMany({
+      where: { bossId, success: true },
+      include: {
+        user: { select: { id: true, name: true, university: { select: { name: true } } } }
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 10
+    });
+    res.json(attempts);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка отримання рейтингу боса' });
+  }
+};

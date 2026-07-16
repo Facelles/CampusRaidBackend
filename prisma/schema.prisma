@@ -27,6 +27,8 @@ model User {
   bossesCreated    Boss[]     @relation("BossCreator")
   bossAttempts     BossAttempt[]
   votes            PostVote[]
+  friendships1     Friendship[] @relation("UserFriends1")
+  friendships2     Friendship[] @relation("UserFriends2")
 }
 
 // 🏛️ Університет
@@ -35,6 +37,7 @@ model University {
   name  String @unique
   users User[]
   posts Post[]
+  bosses Boss[]
 }
 
 // 📰 Пости / Треди
@@ -83,10 +86,12 @@ model Boss {
   imageUrl  String?  // URL картинки боса
   maxHp     Int
   currentHp Int
-  status    String   @default("ACTIVE") // "ACTIVE" | "PROPOSED"
+  status    String   @default("ACTIVE") // "ACTIVE" | "DEFEATED"
   inviteCode String?  @unique // Код доступу для приватних босів викладача
   creatorId String?
   creator   User?    @relation("BossCreator", fields: [creatorId], references: [id])
+  universityId String?
+  university   University? @relation(fields: [universityId], references: [id])
   puzzles   Puzzle[]
   attempts  BossAttempt[]
 }
@@ -140,4 +145,18 @@ model BossAttempt {
   bossId    String
   user      User     @relation(fields: [userId], references: [id])
   boss      Boss     @relation(fields: [bossId], references: [id])
+}
+
+// 🤝 Друзі
+model Friendship {
+  id        String   @id @default(uuid())
+  user1Id   String
+  user2Id   String
+  status    String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  createdAt DateTime @default(now())
+
+  user1     User     @relation("UserFriends1", fields: [user1Id], references: [id])
+  user2     User     @relation("UserFriends2", fields: [user2Id], references: [id])
+
+  @@unique([user1Id, user2Id])
 }

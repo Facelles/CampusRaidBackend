@@ -4,7 +4,13 @@ import { z } from 'zod';
 
 export const getActiveBoss = async (req: Request, res: Response) => {
   try {
-    const boss = await prisma.boss.findFirst({
+    const { universityId } = req.query;
+    if (!universityId || typeof universityId !== 'string') {
+      return res.status(400).json({ message: 'universityId is required' });
+    }
+
+    let boss = await prisma.boss.findFirst({
+      where: { universityId, status: 'ACTIVE' },
       include: { 
         puzzles: { 
           include: { blocks: true } 
@@ -13,13 +19,65 @@ export const getActiveBoss = async (req: Request, res: Response) => {
     });
 
     if (!boss) {
-      return res.status(404).json({ message: 'Активного боса не знайдено' });
+      // Find a template boss (no university assigned)
+      // Pick random template boss
+      let templates = await prisma.boss.findMany({
+        where: { universityId: null },
+        include: { puzzles: { include: { blocks: true } } }
+      });
+
+      if (templates.length === 0) {
+        // Fallback: get ANY boss to use as a template
+        templates = await prisma.boss.findMany({
+          take: 3,
+          include: { puzzles: { include: { blocks: true } } }
+        });
+        if (templates.length === 0) {
+           return res.status(404).json({ message: 'No bosses in database to copy from' });
+        }
+      }
+
+      const templateBoss = templates[Math.floor(Math.random() * templates.length)];
+      if (!templateBoss) {
+        return res.status(404).json({ message: 'No template boss found' });
+      }
+
+      boss = await prisma.boss.create({
+        data: {
+          name: templateBoss.name,
+          imageUrl: templateBoss.imageUrl,
+          maxHp: templateBoss.maxHp,
+          currentHp: templateBoss.maxHp,
+          universityId,
+          status: 'ACTIVE',
+          puzzles: {
+            create: templateBoss.puzzles.map(p => ({
+              title: p.title,
+              description: p.description,
+              type: p.type,
+              correctOrder: p.correctOrder,
+              blocks: {
+                create: p.blocks.map(b => ({
+                  text: b.text
+                }))
+              }
+            }))
+          }
+        },
+        include: { puzzles: { include: { blocks: true } } }
+      });
     }
 
-    // Віддаємо перший знайдений пазл і перемішуємо блоки для фронтенду
-    const puzzle = boss.puzzles[0];
-    if (puzzle && puzzle.blocks) {
-      puzzle.blocks = puzzle.blocks.sort(() => Math.random() - 0.5);
+    // Віддаємо один випадковий пазл і перемішуємо блоки для фронтенду
+    if (boss.puzzles.length > 0) {
+      const randomIndex = Math.floor(Math.random() * boss.puzzles.length);
+      const puzzle = boss.puzzles[randomIndex];
+      if (puzzle && puzzle.blocks) {
+        puzzle.blocks = puzzle.blocks.sort(() => Math.random() - 0.5);
+        boss.puzzles = [puzzle];
+      } else {
+        boss.puzzles = [];
+      }
     }
 
     res.json(boss);
@@ -54,24 +112,30 @@ export const attackBoss = async (req: Request, res: Response) => {
     const userOrderString = blockIds.join(',');
 
     if (userOrderString === puzzle.correctOrder) {
-      // 1. Зменшуємо HP боса
-      await prisma.boss.update({
+      const damage = 20;
+      
+      const updatedBoss = await prisma.boss.update({
         where: { id: puzzle.bossId },
-        data: { currentHp: { decrement: 20 } }
+        data: { currentHp: { decrement: damage } }
       });
 
-      // 2. Нараховуємо XP та коіни юзеру
+      if (updatedBoss.currentHp <= 0) {
+        await prisma.boss.update({
+          where: { id: puzzle.bossId },
+          data: { status: 'DEFEATED' }
+        });
+      }
+
       await prisma.user.update({
         where: { id: userId },
         data: { xp: { increment: 50 }, coins: { increment: 10 } }
       });
 
-      // Логування успішної спроби
       await prisma.bossAttempt.create({
         data: { userId, bossId: puzzle.bossId, success: true }
       });
 
-      return res.json({ success: true, damage: 20, message: 'Критичний удар по Босу!' });
+      return res.json({ success: true, damage, message: 'Критичний удар по Босу!' });
     } else {
       // Логування невдалої спроби
       await prisma.bossAttempt.create({

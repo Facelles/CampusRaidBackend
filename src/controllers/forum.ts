@@ -83,15 +83,9 @@ export const getPostById = async (req: Request, res: Response) => {
     const post = await prisma.post.findUnique({
       where: { id },
       include: {
-        user: {
-          select: { id: true, name: true, role: true, xp: true, coins: true, titles: true, universityId: true }
-        },
+        user: { select: { name: true, titles: true } },
         comments: {
-          include: {
-            user: {
-              select: { id: true, name: true, role: true, xp: true, coins: true, titles: true, universityId: true }
-            }
-          },
+          include: { user: { select: { name: true, titles: true } } },
           orderBy: { createdAt: 'asc' }
         }
       }
@@ -192,5 +186,57 @@ export const votePost = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка сервера' });
+  }
+};
+
+const commentSchema = z.object({
+  content: z.string().min(1, 'Коментар не може бути порожнім'),
+  userId: z.string().min(1, 'userId обов\'язковий'),
+});
+
+export const getThreads = async (req: Request, res: Response) => {
+  try {
+    const universityId = req.query.universityId as string;
+
+    const threads = await prisma.post.findMany({
+      where: { universityId }
+    });
+    res.json(threads);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка сервера' });
+  }
+};
+
+export const addComment = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string; // postId
+    const parsed = commentSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Помилка валідації' });
+    }
+
+    const { content, userId } = parsed.data;
+
+    const post = await prisma.post.findUnique({ where: { id } });
+    if (!post) {
+      return res.status(404).json({ error: 'Пост не знайдено' });
+    }
+
+    const comment = await prisma.comment.create({
+      data: {
+        content,
+        postId: id,
+        userId
+      },
+      include: {
+        user: { select: { name: true, titles: true } }
+      }
+    });
+
+    res.json(comment);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка при створенні коментаря' });
   }
 };
