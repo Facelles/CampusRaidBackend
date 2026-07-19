@@ -23,13 +23,24 @@ export const getPosts = async (req: Request, res: Response) => {
           select: { id: true, name: true, role: true, xp: true, coins: true, titles: true, universityId: true }
         },
         _count: {
-          select: { comments: true }
+          select: { comments: true, votes: true }
+        },
+        votes: {
+          select: { type: true }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json(posts);
+    // Sort by upvotes count (upvotes - downvotes) descending
+    const sorted = posts
+      .map(post => ({
+        ...post,
+        upvoteCount: post.votes.filter(v => v.type === 'UP').length - post.votes.filter(v => v.type === 'DOWN').length,
+      }))
+      .sort((a, b) => b.upvoteCount - a.upvoteCount);
+
+    res.json(sorted);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка сервера' });
