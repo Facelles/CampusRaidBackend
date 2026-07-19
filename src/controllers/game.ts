@@ -85,9 +85,10 @@ export const getActiveBoss = async (req: Request, res: Response) => {
       boss = fullBoss;
     }
 
-    // Віддаємо пазл на основі HP, щоб всі юзери в університеті бачили одне і те ж питання
+    // Рахуємо скільки атак вже було зроблено і показуємо наступний пазл
     if (boss.puzzles.length > 0) {
-      const puzzleIndex = boss.currentHp % boss.puzzles.length;
+      const attacksDone = Math.floor((boss.maxHp - boss.currentHp) / 20);
+      const puzzleIndex = attacksDone % boss.puzzles.length;
       const puzzle = boss.puzzles[puzzleIndex];
       if (puzzle && puzzle.blocks) {
         puzzle.blocks = puzzle.blocks.sort(() => Math.random() - 0.5);
