@@ -149,6 +149,11 @@ export const attackBoss = async (req: Request, res: Response) => {
     // Перетворюємо масив від фронта у рядок для порівняння
     const userOrderString = blockIds.join(',');
 
+    console.log('--- DEBUG ATTACK BOSS ---');
+    console.log('userOrderString:', userOrderString);
+    console.log('puzzle.correctOrder:', puzzle.correctOrder);
+    console.log('-------------------------');
+
     if (userOrderString === puzzle.correctOrder) {
       const damage = 20;
       

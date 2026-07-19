@@ -1,5 +1,6 @@
 import { prisma } from '../src/lib/prisma';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 async function main() {
   console.log('🌱 Починаємо наповнення бази даних (Seed)...');
@@ -146,6 +147,19 @@ async function main() {
       ]
     }
   ];
+
+  // 2.5 Перетворення строкових ID на реальні UUID для уникнення багів
+  for (const b of bossesData) {
+    for (const p of b.puzzles) {
+      const idMap = new Map<string, string>();
+      for (const block of p.blocks) {
+        const newId = crypto.randomUUID();
+        idMap.set(block.id, newId);
+        block.id = newId;
+      }
+      p.correctOrder = p.correctOrder.split(',').map(id => idMap.get(id) || id).join(',');
+    }
+  }
 
   // 3. Очищення старих босів та пазлів
   await prisma.bossAttempt.deleteMany();
