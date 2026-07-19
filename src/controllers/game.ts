@@ -84,10 +84,10 @@ export const getActiveBoss = async (req: Request, res: Response) => {
       boss = fullBoss;
     }
 
-    // Віддаємо один випадковий пазл і перемішуємо блоки для фронтенду
+    // Віддаємо пазл на основі HP, щоб всі юзери в університеті бачили одне і те ж питання
     if (boss.puzzles.length > 0) {
-      const randomIndex = Math.floor(Math.random() * boss.puzzles.length);
-      const puzzle = boss.puzzles[randomIndex];
+      const puzzleIndex = boss.currentHp % boss.puzzles.length;
+      const puzzle = boss.puzzles[puzzleIndex];
       if (puzzle && puzzle.blocks) {
         puzzle.blocks = puzzle.blocks.sort(() => Math.random() - 0.5);
         boss.puzzles = [puzzle];
