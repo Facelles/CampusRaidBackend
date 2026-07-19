@@ -20,6 +20,7 @@ async function main() {
   const bossIds = uniBosses.map(b => b.id);
 
   // Каскадне видалення
+  await prisma.raidMessage.deleteMany({ where: { bossId: { in: bossIds } } });
   await prisma.bossAttempt.deleteMany({ where: { bossId: { in: bossIds } } });
   await prisma.codeBlock.deleteMany({ where: { puzzle: { bossId: { in: bossIds } } } });
   await prisma.puzzle.deleteMany({ where: { bossId: { in: bossIds } } });

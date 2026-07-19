@@ -85,10 +85,9 @@ export const getActiveBoss = async (req: Request, res: Response) => {
       boss = fullBoss;
     }
 
-    // Рахуємо скільки атак вже було зроблено і показуємо наступний пазл
+    // Вибираємо випадковий пазл
     if (boss.puzzles.length > 0) {
-      const attacksDone = Math.floor((boss.maxHp - boss.currentHp) / 20);
-      const puzzleIndex = attacksDone % boss.puzzles.length;
+      const puzzleIndex = Math.floor(Math.random() * boss.puzzles.length);
       const puzzle = boss.puzzles[puzzleIndex];
       if (puzzle && puzzle.blocks) {
         puzzle.blocks = puzzle.blocks.sort(() => Math.random() - 0.5);
@@ -260,10 +259,16 @@ export const joinBoss = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Боса за таким кодом не знайдено' });
     }
 
-    // Перемішуємо блоки для фронтенду
-    const puzzle = boss.puzzles[0];
-    if (puzzle && puzzle.blocks) {
-      puzzle.blocks = puzzle.blocks.sort(() => Math.random() - 0.5);
+    // Вибираємо випадковий пазл для фронтенду
+    if (boss.puzzles.length > 0) {
+      const puzzleIndex = Math.floor(Math.random() * boss.puzzles.length);
+      const puzzle = boss.puzzles[puzzleIndex];
+      if (puzzle && puzzle.blocks) {
+        puzzle.blocks = puzzle.blocks.sort(() => Math.random() - 0.5);
+        boss.puzzles = [puzzle];
+      } else {
+        boss.puzzles = [];
+      }
     }
 
     res.json(boss);
