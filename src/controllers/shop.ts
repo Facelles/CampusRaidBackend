@@ -59,3 +59,42 @@ export const buyItem = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Помилка купівлі товару' });
   }
 };
+
+const equipItemSchema = z.object({
+  userId: z.string().min(1, 'userId обов\'язковий'),
+  itemId: z.string().min(1, 'itemId обов\'язковий'),
+});
+
+export const equipItem = async (req: Request, res: Response) => {
+  try {
+    const parsed = equipItemSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Помилка валідації' });
+    }
+
+    const { userId, itemId } = parsed.data;
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const item = await prisma.shopItem.findUnique({ where: { id: itemId } });
+
+    if (!user || !item) {
+      return res.status(404).json({ error: 'Юзера або товар не знайдено' });
+    }
+
+    if (item.type !== 'TITLE' || !user.titles.includes(item.name)) {
+      return res.status(400).json({ error: 'Ви не маєте цього предмету' });
+    }
+
+    const newTitles = [item.name, ...user.titles.filter(t => t !== item.name)];
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { titles: newTitles }
+    });
+
+    res.json({ success: true, message: `Екіпіровано: ${item.name}`, user: updatedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка екіпіровки' });
+  }
+};

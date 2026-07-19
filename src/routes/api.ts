@@ -5,7 +5,7 @@ import { getActiveBoss, attackBoss, joinBoss } from '../controllers/game';
 import { getTopUsers, getTopUniversities, getBossLeaderboard } from '../controllers/leaderboard';
 import { sendMessage, getChatHistory, getMyChats, markAsRead } from '../controllers/chat';
 import { sendFriendRequest, respondFriendRequest, getFriends } from '../controllers/friends';
-import { getShopItems, buyItem } from '../controllers/shop';
+import { getShopItems, buyItem, equipItem } from '../controllers/shop';
 import { getDashboardStats, createCustomBoss } from '../controllers/teacher';
 
 const router = Router();
@@ -55,6 +55,7 @@ router.get('/friends/:userId', getFriends);
 // Магазин
 router.get('/shop/items', getShopItems);
 router.post('/shop/buy', buyItem);
+router.post('/shop/equip', equipItem);
 
 // Викладач
 router.get('/teacher/stats', getDashboardStats);
