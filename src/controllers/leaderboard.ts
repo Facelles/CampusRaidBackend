@@ -35,6 +35,9 @@ export const getTopUniversities = async (req: Request, res: Response) => {
       _sum: {
         xp: true,
       },
+      _count: {
+        id: true,
+      },
       orderBy: {
         _sum: {
           xp: 'desc'
@@ -55,7 +58,8 @@ export const getTopUniversities = async (req: Request, res: Response) => {
       return {
         universityId: group.universityId,
         name: uni ? uni.name : 'Невідомий',
-        totalXp: group._sum.xp || 0
+        totalXp: group._sum.xp || 0,
+        studentCount: group._count.id || 0
       };
     });
 
