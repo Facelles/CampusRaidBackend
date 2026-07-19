@@ -1,20 +1,22 @@
 import { type Request, type Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
+import { AuthenticatedRequest } from '../middleware/auth';
 
 const friendRequestSchema = z.object({
-  user1Id: z.string().min(1, 'user1Id обов\'язковий'),
+  user1Id: z.string().optional(),
   user2Id: z.string().min(1, 'user2Id обов\'язковий'),
 });
 
-export const sendFriendRequest = async (req: Request, res: Response) => {
+export const sendFriendRequest = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const parsed = friendRequestSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Помилка валідації' });
     }
 
-    const { user1Id, user2Id } = parsed.data;
+    const { user2Id } = parsed.data;
+    const user1Id = req.user!.id;
 
     if (user1Id === user2Id) {
       return res.status(400).json({ error: 'Не можна додати себе в друзі' });
@@ -54,7 +56,7 @@ const acceptFriendSchema = z.object({
   status: z.enum(['ACCEPTED', 'REJECTED'])
 });
 
-export const respondFriendRequest = async (req: Request, res: Response) => {
+export const respondFriendRequest = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const parsed = acceptFriendSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -62,6 +64,14 @@ export const respondFriendRequest = async (req: Request, res: Response) => {
     }
 
     const { friendshipId, status } = parsed.data;
+
+    const existing = await prisma.friendship.findUnique({
+      where: { id: friendshipId }
+    });
+
+    if (!existing || existing.user2Id !== req.user!.id) {
+      return res.status(403).json({ error: 'Ви не можете відповісти на цей запит' });
+    }
 
     const friendship = await prisma.friendship.update({
       where: { id: friendshipId },
@@ -75,12 +85,9 @@ export const respondFriendRequest = async (req: Request, res: Response) => {
   }
 };
 
-export const getFriends = async (req: Request, res: Response) => {
+export const getFriends = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const userId = req.params.userId as string;
-    if (!userId) {
-      return res.status(400).json({ error: 'userId обов\'язковий' });
-    }
+    const userId = req.user!.id;
 
     const friendships = await prisma.friendship.findMany({
       where: {

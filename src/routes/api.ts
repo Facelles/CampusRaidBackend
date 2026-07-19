@@ -7,15 +7,20 @@ import { sendMessage, getChatHistory, getMyChats, markAsRead } from '../controll
 import { sendFriendRequest, respondFriendRequest, getFriends } from '../controllers/friends';
 import { getShopItems, buyItem, equipItem } from '../controllers/shop';
 import { getDashboardStats, createCustomBoss } from '../controllers/teacher';
+import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
 // ==========================================
-// 🔑 Блок 1: Авторизація та Дані
+// 🔑 Блок 1: Авторизація та Дані (Публічні)
 // ==========================================
 router.post('/auth/login', login);
 router.post('/auth/register', register);
 router.get('/universities', getUniversities);
+
+// Всі наступні маршрути потребують JWT авторизації
+router.use(authenticateToken);
+
 router.put('/user/university', updateUniversity);
 
 // ==========================================

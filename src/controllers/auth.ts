@@ -2,6 +2,16 @@ import { type Request, type Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { AuthenticatedRequest } from '../middleware/auth';
+
+const generateToken = (userId: string, role: string) => {
+  return jwt.sign(
+    { id: userId, role },
+    process.env.JWT_SECRET || 'super-secret-key-12345',
+    { expiresIn: '30d' }
+  );
+};
 
 const loginSchema = z.object({
   email: z.string().email('Некоректний формат email'),
@@ -32,7 +42,9 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const { password: _, ...userWithoutPassword } = user;
-    res.json(userWithoutPassword);
+    const token = generateToken(user.id, user.role);
+
+    res.json({ token, user: userWithoutPassword });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка сервера під час логіну' });
@@ -86,7 +98,9 @@ export const register = async (req: Request, res: Response) => {
     });
 
     const { password: _, ...userWithoutPassword } = user;
-    res.json(userWithoutPassword);
+    const token = generateToken(user.id, user.role);
+
+    res.json({ token, user: userWithoutPassword });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка сервера під час реєстрації' });
@@ -106,18 +120,22 @@ export const getUniversities = async (req: Request, res: Response) => {
 };
 
 const updateUniversitySchema = z.object({
-  userId: z.string().min(1, 'userId обов\'язковий'),
   universityId: z.string().min(1, 'universityId обов\'язковий'),
 });
 
-export const updateUniversity = async (req: Request, res: Response) => {
+export const updateUniversity = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const parsed = updateUniversitySchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || "Помилка валідації" });
     }
 
-    const { userId, universityId } = parsed.data;
+    const { universityId } = parsed.data;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Неавторизовано' });
+    }
 
     // Перевіримо, чи існує універ
     const university = await prisma.university.findUnique({ where: { id: universityId } });

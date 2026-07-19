@@ -1,21 +1,23 @@
 import { type Request, type Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
+import { AuthenticatedRequest } from '../middleware/auth';
 
 const sendMessageSchema = z.object({
-  senderId: z.string().min(1, 'senderId обов\'язковий'),
+  senderId: z.string().optional(),
   receiverId: z.string().min(1, 'receiverId обов\'язковий'),
   content: z.string().min(1, 'Повідомлення не може бути порожнім'),
 });
 
-export const sendMessage = async (req: Request, res: Response) => {
+export const sendMessage = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const parsed = sendMessageSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Помилка валідації' });
     }
 
-    const { senderId, receiverId, content } = parsed.data;
+    const { receiverId, content } = parsed.data;
+    const senderId = req.user!.id;
 
     // Перевірка чи вони друзі
     const friendship = await prisma.friendship.findFirst({
@@ -48,18 +50,19 @@ export const sendMessage = async (req: Request, res: Response) => {
 };
 
 const getChatHistorySchema = z.object({
-  user1Id: z.string().min(1, 'user1Id обов\'язковий'),
+  user1Id: z.string().optional(),
   user2Id: z.string().min(1, 'user2Id обов\'язковий'),
 });
 
-export const getChatHistory = async (req: Request, res: Response) => {
+export const getChatHistory = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const parsed = getChatHistorySchema.safeParse(req.query);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Помилка валідації' });
     }
 
-    const { user1Id, user2Id } = parsed.data;
+    const { user2Id } = parsed.data;
+    const user1Id = req.user!.id;
 
     const messages = await prisma.message.findMany({
       where: {
@@ -91,10 +94,9 @@ export const getChatHistory = async (req: Request, res: Response) => {
   }
 };
 
-export const getMyChats = async (req: Request, res: Response) => {
+export const getMyChats = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const userId = req.query.userId as string;
-    if (!userId) return res.status(400).json({ error: 'userId обов\'язковий' });
+    const userId = req.user!.id;
 
     // Отримуємо всі повідомлення, де юзер був відправником або отримувачем
     const messages = await prisma.message.findMany({
@@ -116,6 +118,7 @@ export const getMyChats = async (req: Request, res: Response) => {
     
     messages.forEach(msg => {
       const partner = msg.senderId === userId ? msg.receiver : msg.sender;
+      if (!partner) return;
       if (!chatPartnersMap.has(partner.id)) {
         chatPartnersMap.set(partner.id, {
           id: partner.id,
@@ -140,16 +143,17 @@ export const getMyChats = async (req: Request, res: Response) => {
 };
 
 const markAsReadSchema = z.object({
-  userId: z.string().min(1),
+  userId: z.string().optional(),
   partnerId: z.string().min(1),
 });
 
-export const markAsRead = async (req: Request, res: Response) => {
+export const markAsRead = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const parsed = markAsReadSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: 'Помилка валідації' });
 
-    const { userId, partnerId } = parsed.data;
+    const { partnerId } = parsed.data;
+    const userId = req.user!.id;
 
     await prisma.message.updateMany({
       where: {

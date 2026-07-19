@@ -1,6 +1,7 @@
 import { type Request, type Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
+import { AuthenticatedRequest } from '../middleware/auth';
 
 export const getShopItems = async (req: Request, res: Response) => {
   try {
@@ -13,18 +14,19 @@ export const getShopItems = async (req: Request, res: Response) => {
 };
 
 const buyItemSchema = z.object({
-  userId: z.string().min(1, 'userId обов\'язковий'),
+  userId: z.string().optional(),
   itemId: z.string().min(1, 'itemId обов\'язковий'),
 });
 
-export const buyItem = async (req: Request, res: Response) => {
+export const buyItem = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const parsed = buyItemSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Помилка валідації' });
     }
 
-    const { userId, itemId } = parsed.data;
+    const { itemId } = parsed.data;
+    const userId = req.user!.id;
 
     // 1. Отримуємо юзера і товар
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -53,7 +55,9 @@ export const buyItem = async (req: Request, res: Response) => {
       }
     });
 
-    res.json({ success: true, message: `Ви успішно придбали: ${item.name}`, user: updatedUser });
+    const { password: _, ...userWithoutPassword } = updatedUser;
+
+    res.json({ success: true, message: `Ви успішно придбали: ${item.name}`, user: userWithoutPassword });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка купівлі товару' });
@@ -61,18 +65,19 @@ export const buyItem = async (req: Request, res: Response) => {
 };
 
 const equipItemSchema = z.object({
-  userId: z.string().min(1, 'userId обов\'язковий'),
+  userId: z.string().optional(),
   itemId: z.string().min(1, 'itemId обов\'язковий'),
 });
 
-export const equipItem = async (req: Request, res: Response) => {
+export const equipItem = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const parsed = equipItemSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Помилка валідації' });
     }
 
-    const { userId, itemId } = parsed.data;
+    const { itemId } = parsed.data;
+    const userId = req.user!.id;
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     const item = await prisma.shopItem.findUnique({ where: { id: itemId } });
@@ -92,7 +97,9 @@ export const equipItem = async (req: Request, res: Response) => {
       data: { titles: newTitles }
     });
 
-    res.json({ success: true, message: `Екіпіровано: ${item.name}`, user: updatedUser });
+    const { password: _, ...userWithoutPassword } = updatedUser;
+
+    res.json({ success: true, message: `Екіпіровано: ${item.name}`, user: userWithoutPassword });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка екіпіровки' });

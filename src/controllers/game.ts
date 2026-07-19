@@ -1,5 +1,6 @@
 import { type Request, type Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { AuthenticatedRequest } from '../middleware/auth';
 import { z } from 'zod';
 import crypto from 'crypto';
 
@@ -104,19 +105,20 @@ export const getActiveBoss = async (req: Request, res: Response) => {
 };
 
 const attackBossSchema = z.object({
-  userId: z.string().min(1, 'userId обов\'язковий'),
+  userId: z.string().optional(),
   puzzleId: z.string().min(1, 'puzzleId обов\'язковий'),
   blockIds: z.array(z.string()).min(1, 'Масив блоків не може бути порожнім'),
 });
 
-export const attackBoss = async (req: Request, res: Response) => {
+export const attackBoss = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const parsed = attackBossSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.issues[0]?.message || "Помилка валідації" });
     }
 
-    const { userId, puzzleId, blockIds } = parsed.data;
+    const { puzzleId, blockIds } = parsed.data;
+    const userId = req.user!.id;
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ message: 'Користувача не знайдено' });

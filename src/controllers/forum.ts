@@ -1,6 +1,7 @@
 import { type Request, type Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
+import { type AuthenticatedRequest } from '../middleware/auth';
 
 const getPostsQuerySchema = z.object({
   universityId: z.string().optional(),
@@ -14,7 +15,7 @@ export const getPosts = async (req: Request, res: Response) => {
     }
 
     const { universityId } = parsed.data;
-    
+
     const posts = await prisma.post.findMany({
       where: universityId ? { universityId: String(universityId) } : undefined,
       include: {
@@ -38,18 +39,19 @@ export const getPosts = async (req: Request, res: Response) => {
 const createPostSchema = z.object({
   title: z.string().min(1, 'Заголовок обов\'язковий'),
   content: z.string().min(1, 'Текст поста обов\'язковий'),
-  userId: z.string().min(1, 'userId обов\'язковий'),
+  userId: z.string().optional(),
   universityId: z.string().min(1, 'universityId обов\'язковий'),
 });
 
-export const createPost = async (req: Request, res: Response) => {
+export const createPost = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const parsed = createPostSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || "Помилка валідації" });
     }
 
-    const { title, content, userId, universityId } = parsed.data;
+    const { title, content, universityId } = parsed.data;
+    const userId = req.user!.id;
 
     const newPost = await prisma.post.create({
       data: {
@@ -86,7 +88,7 @@ export const getPostById = async (req: Request, res: Response) => {
         user: { select: { name: true, titles: true } },
         comments: {
           where: { parentId: null },
-          include: { 
+          include: {
             user: { select: { name: true, titles: true } },
             replies: {
               include: { user: { select: { name: true, titles: true } } },
@@ -111,10 +113,10 @@ export const getPostById = async (req: Request, res: Response) => {
 
 const votePostSchema = z.object({
   type: z.enum(['UPVOTE', 'DOWNVOTE']),
-  userId: z.string().min(1, "userId обов'язковий"),
+  userId: z.string().optional(),
 });
 
-export const votePost = async (req: Request, res: Response) => {
+export const votePost = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const id = req.params.id as string;
     if (!id) {
@@ -125,8 +127,9 @@ export const votePost = async (req: Request, res: Response) => {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || "Помилка валідації" });
     }
 
-    const { type, userId } = parsed.data;
-    
+    const { type } = parsed.data;
+    const userId = req.user!.id;
+
     // Check if user already voted
     const existingVote = await prisma.postVote.findUnique({
       where: {
@@ -198,7 +201,7 @@ export const votePost = async (req: Request, res: Response) => {
 
 const commentSchema = z.object({
   content: z.string().min(1, 'Коментар не може бути порожнім'),
-  userId: z.string().min(1, 'userId обов\'язковий'),
+  userId: z.string().optional(),
   parentId: z.string().optional(),
 });
 
@@ -216,7 +219,7 @@ export const getThreads = async (req: Request, res: Response) => {
   }
 };
 
-export const addComment = async (req: Request, res: Response) => {
+export const addComment = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const id = req.params.id as string; // postId
     const parsed = commentSchema.safeParse(req.body);
@@ -224,7 +227,8 @@ export const addComment = async (req: Request, res: Response) => {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Помилка валідації' });
     }
 
-    const { content, userId, parentId } = parsed.data;
+    const { content, parentId } = parsed.data;
+    const userId = req.user!.id;
 
     const post = await prisma.post.findUnique({ where: { id } });
     if (!post) {
