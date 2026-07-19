@@ -1,6 +1,7 @@
 import { type Request, type Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
+import crypto from 'crypto';
 
 export const getActiveBoss = async (req: Request, res: Response) => {
   try {
@@ -42,30 +43,45 @@ export const getActiveBoss = async (req: Request, res: Response) => {
         return res.status(404).json({ message: 'No template boss found' });
       }
 
-      boss = await prisma.boss.create({
+      const createdBoss = await prisma.boss.create({
         data: {
           name: templateBoss.name,
           imageUrl: templateBoss.imageUrl,
           maxHp: templateBoss.maxHp,
           currentHp: templateBoss.maxHp,
           universityId,
-          status: 'ACTIVE',
-          puzzles: {
-            create: templateBoss.puzzles.map(p => ({
-              title: p.title,
-              description: p.description,
-              type: p.type,
-              correctOrder: p.correctOrder,
-              blocks: {
-                create: p.blocks.map(b => ({
-                  text: b.text
-                }))
-              }
-            }))
+          status: 'ACTIVE'
+        }
+      });
+
+      for (const p of templateBoss.puzzles) {
+        let newCorrectOrder = p.correctOrder;
+        const blocksData = p.blocks.map(b => {
+          const newId = crypto.randomUUID();
+          newCorrectOrder = newCorrectOrder.replace(b.id, newId);
+          return { id: newId, text: b.text };
+        });
+
+        await prisma.puzzle.create({
+          data: {
+            title: p.title,
+            description: p.description,
+            type: p.type,
+            correctOrder: newCorrectOrder,
+            bossId: createdBoss.id,
+            blocks: {
+              create: blocksData
+            }
           }
-        },
+        });
+      }
+      
+      const fullBoss = await prisma.boss.findUnique({
+        where: { id: createdBoss.id },
         include: { puzzles: { include: { blocks: true } } }
       });
+      if (!fullBoss) throw new Error('Failed to load created boss');
+      boss = fullBoss;
     }
 
     // Віддаємо один випадковий пазл і перемішуємо блоки для фронтенду
@@ -101,6 +117,23 @@ export const attackBoss = async (req: Request, res: Response) => {
     }
 
     const { userId, puzzleId, blockIds } = parsed.data;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const failedAttemptsToday = await prisma.bossAttempt.count({
+      where: {
+        userId,
+        success: false,
+        createdAt: {
+          gte: today
+        }
+      }
+    });
+
+    if (failedAttemptsToday >= 5) {
+      return res.status(403).json({ message: 'Ви використали всі 5 невдалих спроб на сьогодні. Спробуйте завтра!' });
+    }
 
     const puzzle = await prisma.puzzle.findUnique({ where: { id: puzzleId } });
     

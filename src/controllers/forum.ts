@@ -85,7 +85,14 @@ export const getPostById = async (req: Request, res: Response) => {
       include: {
         user: { select: { name: true, titles: true } },
         comments: {
-          include: { user: { select: { name: true, titles: true } } },
+          where: { parentId: null },
+          include: { 
+            user: { select: { name: true, titles: true } },
+            replies: {
+              include: { user: { select: { name: true, titles: true } } },
+              orderBy: { createdAt: 'asc' }
+            }
+          },
           orderBy: { createdAt: 'asc' }
         }
       }
@@ -192,6 +199,7 @@ export const votePost = async (req: Request, res: Response) => {
 const commentSchema = z.object({
   content: z.string().min(1, 'Коментар не може бути порожнім'),
   userId: z.string().min(1, 'userId обов\'язковий'),
+  parentId: z.string().optional(),
 });
 
 export const getThreads = async (req: Request, res: Response) => {
@@ -216,21 +224,28 @@ export const addComment = async (req: Request, res: Response) => {
       return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Помилка валідації' });
     }
 
-    const { content, userId } = parsed.data;
+    const { content, userId, parentId } = parsed.data;
 
     const post = await prisma.post.findUnique({ where: { id } });
     if (!post) {
       return res.status(404).json({ error: 'Пост не знайдено' });
     }
 
+    if (parentId) {
+      const parent = await prisma.comment.findUnique({ where: { id: parentId } });
+      if (!parent) return res.status(404).json({ error: 'Батьківський коментар не знайдено' });
+    }
+
     const comment = await prisma.comment.create({
       data: {
         content,
         postId: id,
-        userId
+        userId,
+        parentId
       },
       include: {
-        user: { select: { name: true, titles: true } }
+        user: { select: { name: true, titles: true } },
+        replies: { include: { user: { select: { name: true, titles: true } } } }
       }
     });
 
