@@ -20,15 +20,18 @@ model User {
   university       University @relation(fields: [universityId], references: [id])
   posts            Post[]
   comments         Comment[]
-  
+  currentStreak    Int        @default(0) // поточний streak (скидається при помилці)
+  maxStreak        Int        @default(0) // рекорд для лідерборду
+
   // Відношення для нових фіч
-  sentMessages     Message[]  @relation("SentMessages")
-  receivedMessages Message[]  @relation("ReceivedMessages")
-  bossesCreated    Boss[]     @relation("BossCreator")
+  sentMessages     Message[]     @relation("SentMessages")
+  receivedMessages Message[]     @relation("ReceivedMessages")
+  bossesCreated    Boss[]        @relation("BossCreator")
   bossAttempts     BossAttempt[]
   votes            PostVote[]
-  friendships1     Friendship[] @relation("UserFriends1")
-  friendships2     Friendship[] @relation("UserFriends2")
+  friendships1     Friendship[]  @relation("UserFriends1")
+  friendships2     Friendship[]  @relation("UserFriends2")
+  raidMessages     RaidMessage[]
 }
 
 // 🏛️ Університет
@@ -96,8 +99,9 @@ model Boss {
   creator   User?    @relation("BossCreator", fields: [creatorId], references: [id])
   universityId String?
   university   University? @relation(fields: [universityId], references: [id])
-  puzzles   Puzzle[]
-  attempts  BossAttempt[]
+  puzzles      Puzzle[]
+  attempts     BossAttempt[]
+  raidMessages RaidMessage[]
 }
 
 // 🧩 Задача-пазл для боса
@@ -165,4 +169,15 @@ model Friendship {
   user2     User     @relation("UserFriends2", fields: [user2Id], references: [id])
 
   @@unique([user1Id, user2Id])
+}
+
+// 💬 Публічний рейд-чат (під час боса)
+model RaidMessage {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  bossId    String
+  boss      Boss     @relation(fields: [bossId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }

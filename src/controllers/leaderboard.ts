@@ -13,6 +13,8 @@ export const getTopUsers = async (req: Request, res: Response) => {
         id: true,
         name: true,
         xp: true,
+        currentStreak: true,
+        maxStreak: true,
         university: {
           select: { name: true }
         }

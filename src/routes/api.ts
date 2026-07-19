@@ -7,6 +7,7 @@ import { sendMessage, getChatHistory, getMyChats, markAsRead } from '../controll
 import { sendFriendRequest, respondFriendRequest, getFriends } from '../controllers/friends';
 import { getShopItems, buyItem, equipItem } from '../controllers/shop';
 import { getDashboardStats, createCustomBoss } from '../controllers/teacher';
+import { getRaidMessages, sendRaidMessage } from '../controllers/raidChat';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
@@ -44,11 +45,15 @@ router.get('/leaderboard/users', getTopUsers);
 router.get('/leaderboard/universities', getTopUniversities);
 router.get('/leaderboard/boss/:bossId', getBossLeaderboard);
 
-// Чати
+// Чати (приватні)
 router.post('/chat', sendMessage);
 router.get('/chat/history', getChatHistory);
 router.get('/chat/my', getMyChats);
 router.post('/chat/read', markAsRead);
+
+// Рейд-чат (публічний, під час боса)
+router.get('/raid-chat/:bossId', getRaidMessages);
+router.post('/raid-chat', sendRaidMessage);
 
 // ==========================================
 // 🤝 Блок 6: Друзі

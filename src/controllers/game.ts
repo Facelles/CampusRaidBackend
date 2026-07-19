@@ -124,32 +124,44 @@ export const attackBoss = async (req: AuthenticatedRequest, res: Response) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ message: 'Користувача не знайдено' });
 
+    const puzzle = await prisma.puzzle.findUnique({
+      where: { id: puzzleId },
+      include: { boss: true }
+    });
+    if (!puzzle) return res.status(404).json({ message: 'Пазл не знайдено' });
+
+    const boss = puzzle.boss;
+
+    // ── Денний ліміт невдалих спроб ─────────────────────────────────────────
     if (user.role !== 'ADMIN') {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       const failedAttemptsToday = await prisma.bossAttempt.count({
-        where: {
-          userId,
-          success: false,
-          createdAt: {
-            gte: today
-          }
-        }
+        where: { userId, success: false, createdAt: { gte: today } }
       });
-
       if (failedAttemptsToday >= 7) {
         return res.status(403).json({ message: 'Ви використали всі 7 невдалих спроб на сьогодні. Спробуйте завтра!' });
       }
+
+      // ── Денний ліміт урону (анти-соло) ──────────────────────────────────
+      const dailyCap = Math.floor(boss.maxHp / 3);
+      const todayDamage = await prisma.bossAttempt.aggregate({
+        where: { userId, bossId: boss.id, success: true, createdAt: { gte: today } },
+        _sum: { damage: true }
+      });
+      const damageDealtToday = todayDamage._sum.damage ?? 0;
+
+      if (damageDealtToday >= dailyCap) {
+        return res.status(429).json({
+          message: `Ти вже завдав максимум урону на сьогодні (${damageDealtToday}/${dailyCap}). Поверни завтра — без команди не здолаєш! 🛡️`,
+          dailyCap,
+          damageDealtToday
+        });
+      }
     }
 
-    const puzzle = await prisma.puzzle.findUnique({ where: { id: puzzleId } });
-
-    if (!puzzle) {
-      return res.status(404).json({ message: 'Пазл не знайдено' });
-    }
-
-    // Перетворюємо масив від фронта у рядок для порівняння
+    // ── Перевірка відповіді ──────────────────────────────────────────────────
     const userOrderString = blockIds.join(',');
 
     console.log('--- DEBUG ATTACK BOSS ---');
@@ -158,43 +170,69 @@ export const attackBoss = async (req: AuthenticatedRequest, res: Response) => {
     console.log('-------------------------');
 
     if (userOrderString === puzzle.correctOrder) {
-      const damage = 20;
+      // ── Streak: розрахунок урону ───────────────────────────────────────────
+      const newStreak = user.currentStreak + 1;
+      const DAMAGE_BY_STREAK: Record<number, number> = { 1: 20, 2: 35, 3: 55, 4: 80 };
+      const damage = newStreak >= 5 ? 120 : (DAMAGE_BY_STREAK[newStreak] ?? 20);
+      const newMaxStreak = Math.max(user.maxStreak, newStreak);
 
+      // ── Оновлюємо HP боса ─────────────────────────────────────────────────
       const updatedBoss = await prisma.boss.update({
-        where: { id: puzzle.bossId },
+        where: { id: boss.id },
         data: { currentHp: { decrement: damage } }
       });
 
       if (updatedBoss.currentHp <= 0) {
         await prisma.boss.update({
-          where: { id: puzzle.bossId },
+          where: { id: boss.id },
           data: { status: 'DEFEATED' }
         });
       }
 
+      // ── XP / Coins / Streak ───────────────────────────────────────────────
+      const xpBonus = newStreak >= 5 ? 100 : 50;
       await prisma.user.update({
         where: { id: userId },
-        data: { xp: { increment: 50 }, coins: { increment: 10 } }
+        data: {
+          xp: { increment: xpBonus },
+          coins: { increment: 10 },
+          currentStreak: newStreak,
+          maxStreak: newMaxStreak
+        }
       });
 
       await prisma.bossAttempt.create({
-        data: { userId, bossId: puzzle.bossId, success: true, damage }
+        data: { userId, bossId: boss.id, success: true, damage }
       });
 
-      return res.json({ success: true, damage, message: 'Критичний удар по Босу!' });
+      const streakEmoji = newStreak >= 5 ? '🔥🔥🔥' : newStreak >= 3 ? '🔥🔥' : newStreak >= 2 ? '🔥' : '';
+      const streakMsg = newStreak >= 2 ? ` Streak x${newStreak}! ${streakEmoji}` : '';
+
+      return res.json({
+        success: true,
+        damage,
+        streak: newStreak,
+        message: `Критичний удар по Босу! ${damage} урону.${streakMsg}`
+      });
     } else {
-      // Логування невдалої спроби
-      await prisma.bossAttempt.create({
-        data: { userId, bossId: puzzle.bossId, success: false, damage: 0 }
+      // ── Промах: скидаємо streak ────────────────────────────────────────────
+      await prisma.user.update({
+        where: { id: userId },
+        data: { currentStreak: 0 }
       });
 
-      return res.json({ success: false, message: 'Код не скомпілювався. Бос контратакує!' });
+      await prisma.bossAttempt.create({
+        data: { userId, bossId: boss.id, success: false, damage: 0 }
+      });
+
+      return res.json({ success: false, streak: 0, message: 'Код не скомпілювався. Бос контратакує! Streak скинуто.' });
     }
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка сервера' });
   }
 };
+
 
 const joinBossSchema = z.object({
   inviteCode: z.string().min(1, 'inviteCode обов\'язковий'),
