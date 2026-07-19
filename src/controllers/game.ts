@@ -21,8 +21,15 @@ export const getActiveBoss = async (req: Request, res: Response) => {
     });
 
     if (!boss) {
+      // Find the most recently defeated boss for this university to avoid repeating it
+      const lastAttempt = await prisma.bossAttempt.findFirst({
+        where: { boss: { universityId, status: 'DEFEATED' } },
+        orderBy: { createdAt: 'desc' },
+        include: { boss: true }
+      });
+      const lastDefeatedName = lastAttempt?.boss?.name;
+
       // Find a template boss (no university assigned)
-      // Pick random template boss
       let templates = await prisma.boss.findMany({
         where: { universityId: null },
         include: { puzzles: { include: { blocks: true } } }
@@ -39,7 +46,11 @@ export const getActiveBoss = async (req: Request, res: Response) => {
         }
       }
 
-      const templateBoss = templates[Math.floor(Math.random() * templates.length)];
+      // Filter out the last defeated boss if possible
+      const availableTemplates = templates.filter(t => t.name !== lastDefeatedName);
+      const templatesToChooseFrom = availableTemplates.length > 0 ? availableTemplates : templates;
+
+      const templateBoss = templatesToChooseFrom[Math.floor(Math.random() * templatesToChooseFrom.length)];
       if (!templateBoss) {
         return res.status(404).json({ message: 'No template boss found' });
       }
