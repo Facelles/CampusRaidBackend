@@ -22,6 +22,7 @@ model User {
   comments         Comment[]
   currentStreak    Int        @default(0) // поточний streak (скидається при помилці)
   maxStreak        Int        @default(0) // рекорд для лідерборду
+  avatar           String     @default("👾") // Emoji avatar
 
   // Відношення для нових фіч
   sentMessages     Message[]     @relation("SentMessages")

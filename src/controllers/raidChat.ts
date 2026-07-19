@@ -11,7 +11,7 @@ const sendMessageSchema = z.object({
 // GET /raid-chat/:bossId — останні 50 повідомлень
 export const getRaidMessages = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { bossId } = req.params;
+    const bossId = req.params.bossId as string;
 
     const messages = await prisma.raidMessage.findMany({
       where: { bossId },
@@ -19,7 +19,7 @@ export const getRaidMessages = async (req: AuthenticatedRequest, res: Response) 
       take: 50,
       include: {
         user: {
-          select: { id: true, name: true, currentStreak: true }
+          select: { id: true, name: true, currentStreak: true, avatar: true }
         }
       }
     });
@@ -50,7 +50,7 @@ export const sendRaidMessage = async (req: AuthenticatedRequest, res: Response) 
       data: { bossId, userId, content },
       include: {
         user: {
-          select: { id: true, name: true, currentStreak: true }
+          select: { id: true, name: true, currentStreak: true, avatar: true }
         }
       }
     });

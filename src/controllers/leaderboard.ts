@@ -13,6 +13,7 @@ export const getTopUsers = async (req: Request, res: Response) => {
         id: true,
         name: true,
         xp: true,
+        avatar: true,
         currentStreak: true,
         maxStreak: true,
         university: {
@@ -86,7 +87,7 @@ export const getBossLeaderboard = async (req: Request, res: Response) => {
     const userIds = leaderboard.map(lb => lb.userId);
     const users = await prisma.user.findMany({
       where: { id: { in: userIds } },
-      select: { id: true, name: true, titles: true }
+      select: { id: true, name: true, titles: true, avatar: true }
     });
 
     const result = leaderboard.map(lb => {

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, register, getUniversities, updateUniversity } from '../controllers/auth';
+import { login, register, getUniversities, updateUniversity, updateAvatar } from '../controllers/auth';
 import { getPosts, createPost, getPostById, votePost, addComment } from '../controllers/forum';
 import { getActiveBoss, attackBoss, joinBoss } from '../controllers/game';
 import { getTopUsers, getTopUniversities, getBossLeaderboard } from '../controllers/leaderboard';
@@ -23,6 +23,7 @@ router.get('/universities', getUniversities);
 router.use(authenticateToken);
 
 router.put('/user/university', updateUniversity);
+router.put('/user/avatar', updateAvatar);
 
 // ==========================================
 // 📰 Блок 2: Форум (Reddit-style)

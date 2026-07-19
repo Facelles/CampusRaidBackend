@@ -156,3 +156,36 @@ export const updateUniversity = async (req: AuthenticatedRequest, res: Response)
     res.status(500).json({ error: 'Помилка сервера при оновленні університету' });
   }
 };
+
+const updateAvatarSchema = z.object({
+  avatar: z.string().min(1, 'Аватар обов\'язковий').max(5, 'Максимальна довжина 5 символів (для емоджі)'),
+});
+
+export const updateAvatar = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const parsed = updateAvatarSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Помилка валідації" });
+    }
+
+    const { avatar } = parsed.data;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Неавторизовано' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { avatar },
+      include: { university: true }
+    });
+
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    res.json(userWithoutPassword);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка сервера при оновленні аватара' });
+  }
+};
+

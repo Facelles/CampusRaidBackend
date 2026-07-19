@@ -20,7 +20,7 @@ export const getPosts = async (req: Request, res: Response) => {
       where: universityId ? { universityId: String(universityId) } : undefined,
       include: {
         user: {
-          select: { id: true, name: true, role: true, xp: true, coins: true, titles: true, universityId: true }
+          select: { id: true, name: true, role: true, xp: true, coins: true, titles: true, universityId: true, avatar: true }
         },
         _count: {
           select: { comments: true, votes: true }
@@ -96,13 +96,13 @@ export const getPostById = async (req: Request, res: Response) => {
     const post = await prisma.post.findUnique({
       where: { id },
       include: {
-        user: { select: { name: true, titles: true } },
+        user: { select: { name: true, titles: true, avatar: true } },
         comments: {
           where: { parentId: null },
           include: {
-            user: { select: { name: true, titles: true } },
+            user: { select: { name: true, titles: true, avatar: true } },
             replies: {
-              include: { user: { select: { name: true, titles: true } } },
+              include: { user: { select: { name: true, titles: true, avatar: true } } },
               orderBy: { createdAt: 'asc' }
             }
           },
@@ -195,7 +195,7 @@ export const votePost = async (req: AuthenticatedRequest, res: Response) => {
       },
       include: {
         user: {
-          select: { id: true, name: true, role: true, xp: true, coins: true, titles: true, universityId: true }
+          select: { id: true, name: true, role: true, xp: true, coins: true, titles: true, universityId: true, avatar: true }
         },
         _count: {
           select: { comments: true }
@@ -259,8 +259,8 @@ export const addComment = async (req: AuthenticatedRequest, res: Response) => {
         parentId
       },
       include: {
-        user: { select: { name: true, titles: true } },
-        replies: { include: { user: { select: { name: true, titles: true } } } }
+        user: { select: { name: true, titles: true, avatar: true } },
+        replies: { include: { user: { select: { name: true, titles: true, avatar: true } } } }
       }
     });
 

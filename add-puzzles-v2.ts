@@ -148,8 +148,8 @@ async function main() {
 
   try {
     for (const [bossName, puzzles] of Object.entries(bossMap)) {
-      const boss = await prisma.boss.findFirst({ where: { name: bossName } });
-      if (!boss) { console.error(`Боса "${bossName}" не знайдено.`); continue; }
+      const boss = await prisma.boss.findFirst({ where: { name: bossName, universityId: null } });
+      if (!boss) { console.error(`Боса шаблона "${bossName}" не знайдено.`); continue; }
 
       const before = await prisma.puzzle.count({ where: { bossId: boss.id } });
       let added = 0;

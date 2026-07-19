@@ -20,7 +20,7 @@ async function main() {
     {
       name: 'Зелений Жнець (Memory Leak)',
       imageUrl: '/assets/null_reaper_isolated_1784022346516.jpg',
-      maxHp: 2000,
+      maxHp: 10000,
       puzzles: [
         {
           title: 'Рейд 1: WeakMap Кешування',
@@ -63,7 +63,7 @@ async function main() {
     {
       name: 'Уроборос (Infinite Loop)',
       imageUrl: '/assets/loop_dragon_isolated_1784022338222.jpg',
-      maxHp: 3500,
+      maxHp: 25000,
       puzzles: [
         {
           title: 'Рейд 1: Рекурсивний DFS Графа',
@@ -107,7 +107,7 @@ async function main() {
     {
       name: 'Червоний Демон (Kernel Panic)',
       imageUrl: '/assets/syntax_boss_isolated_1784022329125.jpg',
-      maxHp: 5000,
+      maxHp: 50000,
       puzzles: [
         {
           title: 'Рейд 1: Безпека JWT',
