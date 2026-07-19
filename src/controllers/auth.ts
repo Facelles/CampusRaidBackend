@@ -75,13 +75,20 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Цей email вже зареєстрований.' });
     }
 
-    let university = await prisma.university.findUnique({
-      where: { name: universityName }
+    const trimmedUniversityName = universityName.trim();
+
+    let university = await prisma.university.findFirst({
+      where: { 
+        name: {
+          equals: trimmedUniversityName,
+          mode: 'insensitive'
+        }
+      }
     });
 
     if (!university) {
       university = await prisma.university.create({
-        data: { name: universityName }
+        data: { name: trimmedUniversityName }
       });
     }
 
