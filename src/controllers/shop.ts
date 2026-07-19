@@ -1,7 +1,7 @@
 import { type Request, type Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { type AuthenticatedRequest } from '../middleware/auth';
 
 export const getShopItems = async (req: Request, res: Response) => {
   try {

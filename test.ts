@@ -1,1 +1,0 @@
-import { PrismaClient } from '@prisma/client'; const prisma = new PrismaClient(); async function main() { const blocks = await prisma.codeBlock.findMany({ take: 5 }); console.log(blocks.map(b => b.id)); process.exit(0); } main();

@@ -3,7 +3,7 @@ import { prisma } from '../lib/prisma';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { type AuthenticatedRequest } from '../middleware/auth';
 
 const generateToken = (userId: string, role: string) => {
   return jwt.sign(

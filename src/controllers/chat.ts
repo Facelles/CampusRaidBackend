@@ -1,7 +1,7 @@
 import { type Request, type Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { type AuthenticatedRequest } from '../middleware/auth';
 
 const sendMessageSchema = z.object({
   senderId: z.string().optional(),
@@ -115,7 +115,7 @@ export const getMyChats = async (req: AuthenticatedRequest, res: Response) => {
 
     // Формуємо унікальний список співрозмовників
     const chatPartnersMap = new Map();
-    
+
     messages.forEach(msg => {
       const partner = msg.senderId === userId ? msg.receiver : msg.sender;
       if (!partner) return;
@@ -129,7 +129,7 @@ export const getMyChats = async (req: AuthenticatedRequest, res: Response) => {
           unreadCount: 0
         });
       }
-      
+
       if (msg.receiverId === userId && !msg.isRead) {
         chatPartnersMap.get(partner.id).unreadCount += 1;
       }

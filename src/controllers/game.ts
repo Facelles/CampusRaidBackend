@@ -1,6 +1,6 @@
 import { type Request, type Response } from 'express';
 import { prisma } from '../lib/prisma';
-import { AuthenticatedRequest } from '../middleware/auth';
+import { type AuthenticatedRequest } from '../middleware/auth';
 import { z } from 'zod';
 import crypto from 'crypto';
 
@@ -13,10 +13,10 @@ export const getActiveBoss = async (req: Request, res: Response) => {
 
     let boss = await prisma.boss.findFirst({
       where: { universityId, status: 'ACTIVE' },
-      include: { 
-        puzzles: { 
-          include: { blocks: true } 
-        } 
+      include: {
+        puzzles: {
+          include: { blocks: true }
+        }
       }
     });
 
@@ -35,7 +35,7 @@ export const getActiveBoss = async (req: Request, res: Response) => {
           include: { puzzles: { include: { blocks: true } } }
         });
         if (templates.length === 0) {
-           return res.status(404).json({ message: 'No bosses in database to copy from' });
+          return res.status(404).json({ message: 'No bosses in database to copy from' });
         }
       }
 
@@ -76,7 +76,7 @@ export const getActiveBoss = async (req: Request, res: Response) => {
           }
         });
       }
-      
+
       const fullBoss = await prisma.boss.findUnique({
         where: { id: createdBoss.id },
         include: { puzzles: { include: { blocks: true } } }
@@ -143,7 +143,7 @@ export const attackBoss = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     const puzzle = await prisma.puzzle.findUnique({ where: { id: puzzleId } });
-    
+
     if (!puzzle) {
       return res.status(404).json({ message: 'Пазл не знайдено' });
     }
@@ -158,7 +158,7 @@ export const attackBoss = async (req: AuthenticatedRequest, res: Response) => {
 
     if (userOrderString === puzzle.correctOrder) {
       const damage = 20;
-      
+
       const updatedBoss = await prisma.boss.update({
         where: { id: puzzle.bossId },
         data: { currentHp: { decrement: damage } }
@@ -210,10 +210,10 @@ export const joinBoss = async (req: Request, res: Response) => {
 
     const boss = await prisma.boss.findUnique({
       where: { inviteCode },
-      include: { 
-        puzzles: { 
-          include: { blocks: true } 
-        } 
+      include: {
+        puzzles: {
+          include: { blocks: true }
+        }
       }
     });
 

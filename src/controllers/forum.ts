@@ -1,7 +1,7 @@
 import { type Request, type Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { z } from 'zod';
-import { type AuthenticatedRequest } from '../middleware/auth';
+import type { AuthenticatedRequest } from '../middleware/auth';
 
 const getPostsQuerySchema = z.object({
   universityId: z.string().optional(),
