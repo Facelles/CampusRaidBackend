@@ -74,6 +74,16 @@ export const getChatHistory = async (req: Request, res: Response) => {
       orderBy: { createdAt: 'asc' }
     });
 
+    // Mark messages sent by user2Id to user1Id as read
+    await prisma.message.updateMany({
+      where: {
+        senderId: user2Id,
+        receiverId: user1Id,
+        isRead: false
+      },
+      data: { isRead: true }
+    });
+
     res.json(messages);
   } catch (error) {
     console.error(error);
@@ -95,8 +105,8 @@ export const getMyChats = async (req: Request, res: Response) => {
         ]
       },
       include: {
-        sender: { select: { id: true, name: true } },
-        receiver: { select: { id: true, name: true } }
+        sender: { select: { id: true, name: true, titles: true } },
+        receiver: { select: { id: true, name: true, titles: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -110,9 +120,15 @@ export const getMyChats = async (req: Request, res: Response) => {
         chatPartnersMap.set(partner.id, {
           id: partner.id,
           name: partner.name,
+          titles: partner.titles,
           lastMessage: msg.content,
-          lastMessageAt: msg.createdAt
+          lastMessageAt: msg.createdAt,
+          unreadCount: 0
         });
+      }
+      
+      if (msg.receiverId === userId && !msg.isRead) {
+        chatPartnersMap.get(partner.id).unreadCount += 1;
       }
     });
 
@@ -120,5 +136,33 @@ export const getMyChats = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Помилка отримання списку чатів' });
+  }
+};
+
+const markAsReadSchema = z.object({
+  userId: z.string().min(1),
+  partnerId: z.string().min(1),
+});
+
+export const markAsRead = async (req: Request, res: Response) => {
+  try {
+    const parsed = markAsReadSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: 'Помилка валідації' });
+
+    const { userId, partnerId } = parsed.data;
+
+    await prisma.message.updateMany({
+      where: {
+        senderId: partnerId,
+        receiverId: userId,
+        isRead: false
+      },
+      data: { isRead: true }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Помилка оновлення статусу повідомлень' });
   }
 };

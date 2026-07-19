@@ -19,6 +19,7 @@ export const login = async (req: Request, res: Response) => {
 
     const user = await prisma.user.findUnique({
       where: { email },
+      include: { university: true }
     });
 
     if (!user) {
@@ -81,6 +82,7 @@ export const register = async (req: Request, res: Response) => {
         name,
         universityId: university.id,
       },
+      include: { university: true }
     });
 
     const { password: _, ...userWithoutPassword } = user;

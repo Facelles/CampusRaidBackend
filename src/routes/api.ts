@@ -3,7 +3,7 @@ import { login, register, getUniversities, updateUniversity } from '../controlle
 import { getPosts, createPost, getPostById, votePost, addComment } from '../controllers/forum';
 import { getActiveBoss, attackBoss, joinBoss } from '../controllers/game';
 import { getTopUsers, getTopUniversities, getBossLeaderboard } from '../controllers/leaderboard';
-import { sendMessage, getChatHistory, getMyChats } from '../controllers/chat';
+import { sendMessage, getChatHistory, getMyChats, markAsRead } from '../controllers/chat';
 import { sendFriendRequest, respondFriendRequest, getFriends } from '../controllers/friends';
 import { getShopItems, buyItem } from '../controllers/shop';
 import { getDashboardStats, createCustomBoss } from '../controllers/teacher';
@@ -43,6 +43,7 @@ router.get('/leaderboard/boss/:bossId', getBossLeaderboard);
 router.post('/chat', sendMessage);
 router.get('/chat/history', getChatHistory);
 router.get('/chat/my', getMyChats);
+router.post('/chat/read', markAsRead);
 
 // ==========================================
 // 🤝 Блок 6: Друзі

@@ -118,21 +118,26 @@ export const attackBoss = async (req: Request, res: Response) => {
 
     const { userId, puzzleId, blockIds } = parsed.data;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ message: 'Користувача не знайдено' });
 
-    const failedAttemptsToday = await prisma.bossAttempt.count({
-      where: {
-        userId,
-        success: false,
-        createdAt: {
-          gte: today
+    if (user.role !== 'ADMIN') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const failedAttemptsToday = await prisma.bossAttempt.count({
+        where: {
+          userId,
+          success: false,
+          createdAt: {
+            gte: today
+          }
         }
-      }
-    });
+      });
 
-    if (failedAttemptsToday >= 5) {
-      return res.status(403).json({ message: 'Ви використали всі 5 невдалих спроб на сьогодні. Спробуйте завтра!' });
+      if (failedAttemptsToday >= 7) {
+        return res.status(403).json({ message: 'Ви використали всі 7 невдалих спроб на сьогодні. Спробуйте завтра!' });
+      }
     }
 
     const puzzle = await prisma.puzzle.findUnique({ where: { id: puzzleId } });

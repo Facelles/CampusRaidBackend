@@ -125,6 +125,7 @@ model Message {
   id         String   @id @default(uuid())
   content    String
   createdAt  DateTime @default(now())
+  isRead     Boolean  @default(false)
   senderId   String
   receiverId String
   sender     User     @relation("SentMessages", fields: [senderId], references: [id])
