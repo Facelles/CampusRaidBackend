@@ -68,6 +68,9 @@ export const getChatHistory = async (req: Request, res: Response) => {
           { senderId: user2Id, receiverId: user1Id }
         ]
       },
+      include: {
+        sender: { select: { titles: true } }
+      },
       orderBy: { createdAt: 'asc' }
     });
 
